@@ -18,220 +18,188 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# CUSTOM UI THEME — presentation only
+# PROFESSIONAL UI THEME
+# Restrained navy / slate / blue palette for a formal panel presentation.
+# No changes to planner or resume-analysis logic.
 # --------------------------------------------------
 st.markdown("""
 <style>
-/* App canvas */
+:root {
+    --app-bg: #0f172a;
+    --panel-bg: #172033;
+    --card-bg: #1b263a;
+    --border: #334155;
+    --text: #f1f5f9;
+    --muted: #bdc8d8;
+    --accent: #60a5fa;
+}
 .stApp {
-    background:
-        radial-gradient(ellipse at 12% 0%, rgba(91, 63, 170, 0.15), transparent 34%),
-        radial-gradient(ellipse at 95% 10%, rgba(37, 99, 235, 0.10), transparent 30%),
-        #0b0d14;
-    color: #edf0f7;
+    background: #0b1220;
+    color: var(--text);
 }
-
-/* Main content spacing and width */
 .block-container {
-    padding-top: 2.2rem;
+    max-width: 1380px;
+    padding-top: 1.8rem;
     padding-bottom: 3rem;
-    max-width: 1450px;
 }
-
-/* Sidebar */
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #171923 0%, #141622 100%);
-    border-right: 1px solid rgba(167, 139, 250, 0.18);
+    background: #111827;
+    border-right: 1px solid #263449;
 }
 section[data-testid="stSidebar"] > div {
-    padding-top: 2rem;
+    padding-top: 1.8rem;
 }
-section[data-testid="stSidebar"] h1,
-section[data-testid="stSidebar"] h2,
-section[data-testid="stSidebar"] h3 {
-    color: #f4f1ff;
-}
-
-/* Typography */
 h1, h2, h3 {
-    letter-spacing: -0.035em;
+    color: #f8fafc !important;
+    letter-spacing: -0.025em;
 }
 h1 {
-    color: #fbfaff;
-    font-size: clamp(2rem, 3vw, 2.8rem) !important;
+    font-size: clamp(1.8rem, 2.6vw, 2.45rem) !important;
     font-weight: 750 !important;
 }
 h2 {
-    color: #f2edff;
+    font-size: 1.55rem !important;
     font-weight: 700 !important;
 }
 h3 {
-    color: #dcd2ff;
+    font-size: 1.15rem !important;
     font-weight: 650 !important;
 }
 p, label, [data-testid="stMarkdownContainer"] {
-    color: #d7d9e4;
+    color: #d5deeb;
 }
-small, .stCaption {
-    color: #a9afc2 !important;
+[data-testid="stCaptionContainer"] {
+    color: #aab8cc !important;
 }
-
-/* Hero panel */
-.hero-panel {
-    background: linear-gradient(120deg, rgba(124, 58, 237, 0.20), rgba(37, 99, 235, 0.12) 58%, rgba(20, 24, 40, 0.78));
-    border: 1px solid rgba(167, 139, 250, 0.28);
-    border-radius: 22px;
-    padding: 1.6rem 1.8rem;
-    margin: 0.35rem 0 1.35rem 0;
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.16);
+.hero {
+    padding: 1.65rem 1.8rem;
+    border-radius: 16px;
+    border: 1px solid #34445d;
+    background: linear-gradient(115deg, #17243a 0%, #172033 65%, #1c2940 100%);
+    margin: 0.25rem 0 1.5rem 0;
 }
-.hero-eyebrow {
-    color: #c4b5fd;
-    font-size: 0.78rem;
-    font-weight: 750;
-    letter-spacing: 0.13em;
+.eyebrow {
+    color: #93c5fd;
     text-transform: uppercase;
-    margin-bottom: 0.55rem;
+    font-size: 0.75rem;
+    font-weight: 750;
+    letter-spacing: 0.12em;
+    margin-bottom: 0.5rem;
 }
 .hero-title {
     color: #ffffff;
-    font-size: clamp(1.65rem, 2.7vw, 2.35rem);
-    line-height: 1.18;
+    font-size: clamp(1.65rem, 2.4vw, 2.3rem);
     font-weight: 800;
+    line-height: 1.2;
     margin-bottom: 0.65rem;
 }
 .hero-copy {
-    color: #cdd2e2;
+    color: #c5d1e2;
     font-size: 1rem;
-    line-height: 1.65;
-    max-width: 760px;
+    line-height: 1.6;
+    max-width: 850px;
 }
-
-/* Feature cards */
 .feature-card {
     height: 100%;
-    min-height: 190px;
-    padding: 1.35rem 1.4rem;
-    background: linear-gradient(145deg, rgba(27, 31, 48, 0.96), rgba(19, 22, 35, 0.96));
-    border: 1px solid rgba(148, 163, 184, 0.17);
-    border-radius: 18px;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+    min-height: 175px;
+    padding: 1.3rem;
+    border-radius: 14px;
+    border: 1px solid #334155;
+    background: #151f31;
 }
 .feature-icon {
-    font-size: 1.7rem;
-    margin-bottom: 0.65rem;
+    font-size: 1.55rem;
+    margin-bottom: 0.7rem;
 }
 .feature-title {
-    color: #f6f4ff;
-    font-size: 1.15rem;
+    color: #f8fafc;
+    font-size: 1.12rem;
     font-weight: 750;
     margin-bottom: 0.5rem;
 }
 .feature-copy {
-    color: #b9c0d2;
+    color: #c1ccdc;
     line-height: 1.6;
-    font-size: 0.94rem;
+    font-size: 0.93rem;
 }
-
-/* Section labels */
-.section-kicker {
-    color: #a78bfa;
-    font-size: 0.76rem;
+.section-label {
+    color: #93c5fd;
+    font-size: 0.74rem;
     font-weight: 750;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     margin-bottom: 0.35rem;
 }
-
-/* Form controls */
 div[data-baseweb="input"] > div,
 div[data-baseweb="select"] > div,
 div[data-baseweb="textarea"] > div {
-    background: #191c29 !important;
-    border: 1px solid #34384b !important;
-    border-radius: 10px !important;
+    background: #151f31 !important;
+    border: 1px solid #3a4960 !important;
+    border-radius: 8px !important;
 }
 div[data-baseweb="input"] input,
-div[data-baseweb="textarea"] textarea {
-    color: #f4f5fb !important;
-}
+div[data-baseweb="textarea"] textarea,
 div[data-baseweb="select"] * {
-    color: #f4f5fb !important;
+    color: #f1f5f9 !important;
 }
 div[data-testid="stDateInput"] input {
-    color: #f4f5fb !important;
+    color: #f1f5f9 !important;
 }
 div[data-testid="stFileUploader"] {
-    background: rgba(25, 28, 41, 0.72);
-    border: 1px dashed rgba(167, 139, 250, 0.48);
-    border-radius: 15px;
-    padding: 0.85rem;
+    background: #151f31;
+    border: 1px dashed #526782;
+    border-radius: 12px;
+    padding: 0.75rem;
 }
-div[data-testid="stFileUploader"] section {
-    border: 0;
-}
-
-/* Buttons */
 .stButton > button {
-    background: linear-gradient(100deg, #7c3aed 0%, #4f46e5 55%, #2563eb 100%);
+    background: #2563eb;
     color: #ffffff;
-    border: 1px solid rgba(196, 181, 253, 0.25);
-    border-radius: 10px;
-    padding: 0.58rem 1rem;
-    font-weight: 700;
-    transition: filter 0.15s ease, transform 0.15s ease;
+    border: 1px solid #3b82f6;
+    border-radius: 8px;
+    font-weight: 650;
+    padding: 0.55rem 0.95rem;
+    transition: background 0.15s ease;
 }
 .stButton > button:hover {
+    background: #1d4ed8;
+    border-color: #60a5fa;
     color: #ffffff;
-    border-color: rgba(221, 214, 254, 0.65);
-    filter: brightness(1.12);
-    transform: translateY(-1px);
 }
-
-/* Metrics, alerts, tables and expanders */
 div[data-testid="stMetric"] {
-    background: linear-gradient(145deg, #1b1f30, #151827);
-    border: 1px solid rgba(167, 139, 250, 0.22);
-    border-radius: 16px;
-    padding: 1rem 1.15rem;
+    background: #151f31;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 1rem;
 }
 div[data-testid="stMetricLabel"] {
-    color: #b9c0d2 !important;
+    color: #bdc8d8 !important;
 }
 div[data-testid="stMetricValue"] {
-    color: #e9ddff !important;
-}
-div[data-testid="stAlert"] {
-    border-radius: 12px;
+    color: #bfdbfe !important;
 }
 div[data-testid="stDataFrame"] {
-    border: 1px solid rgba(167, 139, 250, 0.2);
-    border-radius: 12px;
+    border: 1px solid #334155;
+    border-radius: 10px;
     overflow: hidden;
 }
 details {
-    background: rgba(25, 28, 41, 0.55);
-    border: 1px solid rgba(148, 163, 184, 0.15);
-    border-radius: 12px;
+    background: #151f31;
+    border: 1px solid #334155;
+    border-radius: 10px;
 }
 hr {
-    border-color: rgba(148, 163, 184, 0.18);
+    border-color: #2d3a4f;
 }
-
-/* Responsive adjustments */
 @media (max-width: 768px) {
     .block-container {
-        padding-top: 1.2rem;
-        padding-left: 1rem;
-        padding-right: 1rem;
+        padding: 1rem 1rem 2rem 1rem;
     }
-    .hero-panel {
+    .hero {
         padding: 1.2rem;
-        border-radius: 16px;
     }
     .feature-card {
         min-height: auto;
-        margin-bottom: 0.8rem;
+        margin-bottom: 0.7rem;
     }
 }
 </style>
@@ -241,12 +209,12 @@ hr {
 # HEADER
 # --------------------------------------------------
 st.markdown("""
-<div class="hero-panel">
-    <div class="hero-eyebrow">Your academic and career workspace</div>
+<div class="hero">
+    <div class="eyebrow">Academic planning • Career readiness</div>
     <div class="hero-title">🎓 AI Student Career &amp; Academic Assistant</div>
     <div class="hero-copy">
-        Plan your study time, organize your academic priorities, and review
-        the skills highlighted in your resume — all in one place.
+        A student-focused platform to organize study priorities and review
+        the skills highlighted in your resume.
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -255,7 +223,7 @@ st.markdown("""
 # SIDEBAR
 # --------------------------------------------------
 st.sidebar.markdown("## Navigation")
-st.sidebar.caption("Choose a workspace")
+st.sidebar.caption("Select a module")
 
 module = st.sidebar.radio(
     "Select a module:",
@@ -268,26 +236,20 @@ module = st.sidebar.radio(
 )
 
 st.sidebar.divider()
-st.sidebar.markdown(
-    "<div style='color:#9ca3b8;font-size:0.8rem;line-height:1.6;'>"
-    "AI Student Assistant<br>Academic planning • Career readiness"
-    "</div>",
-    unsafe_allow_html=True
-)
+st.sidebar.caption("AI Student Assistant | Academic & Career Toolkit")
 
 # ==================================================
 # HOME
 # ==================================================
 if module == "🏠 Home":
 
-    st.markdown('<div class="section-kicker">Overview</div>', unsafe_allow_html=True)
-    st.header("Welcome to your workspace")
+    st.markdown('<div class="section-label">Overview</div>', unsafe_allow_html=True)
+    st.header("Welcome")
     st.write(
-        "Your student-focused toolkit brings academic planning and career "
-        "readiness together in one simple application."
+        "This platform integrates two student-focused modules into one "
+        "application to support academic planning and career readiness."
     )
 
-    st.write("")
     col1, col2 = st.columns(2, gap="large")
 
     with col1:
@@ -296,8 +258,8 @@ if module == "🏠 Home":
             <div class="feature-icon">📚</div>
             <div class="feature-title">AI Study Planner</div>
             <div class="feature-copy">
-                Build a prioritized study plan based on subject difficulty,
-                deadlines, and the amount of time you have available each day.
+                Creates a prioritized study plan based on subject difficulty,
+                deadlines, and available study time.
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -308,21 +270,21 @@ if module == "🏠 Home":
             <div class="feature-icon">📄</div>
             <div class="feature-title">AI Resume Analyzer</div>
             <div class="feature-copy">
-                Upload a PDF resume to identify predefined skills, review
-                detected and missing skills, and understand your skill coverage.
+                Analyzes a student's PDF resume, identifies predefined skills,
+                and provides a basic overview of skill coverage.
             </div>
         </div>
         """, unsafe_allow_html=True)
 
     st.write("")
-    st.info("Choose a module from the navigation sidebar to get started.")
+    st.info("Select a module from the sidebar to begin.")
 
 # ==================================================
-# STUDY PLANNER — existing functionality retained
+# STUDY PLANNER — existing calculations retained
 # ==================================================
 elif module == "📚 AI Study Planner":
 
-    st.markdown('<div class="section-kicker">Academic planning</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-label">Academic planning</div>', unsafe_allow_html=True)
     st.header("📚 AI Study Planner")
     st.write(
         "Create a personalized study plan based on your subjects, deadlines "
@@ -330,9 +292,9 @@ elif module == "📚 AI Study Planner":
     )
 
     st.write("")
-    hours_col, subjects_col = st.columns([1, 1], gap="large")
+    top_col1, top_col2 = st.columns(2, gap="large")
 
-    with hours_col:
+    with top_col1:
         daily_hours = st.number_input(
             "Available study hours per day",
             min_value=1.0,
@@ -341,7 +303,7 @@ elif module == "📚 AI Study Planner":
             step=0.5
         )
 
-    with subjects_col:
+    with top_col2:
         number_of_subjects = st.number_input(
             "Number of subjects",
             min_value=1,
@@ -351,15 +313,14 @@ elif module == "📚 AI Study Planner":
         )
 
     st.divider()
-    st.markdown('<div class="section-kicker">Your subjects</div>', unsafe_allow_html=True)
     st.subheader("Enter Subject Details")
-    st.caption("Add a name, deadline, and difficulty level for each subject.")
+    st.caption("Provide the subject name, deadline, and difficulty level.")
 
     subjects = []
 
     for i in range(int(number_of_subjects)):
         with st.container(border=True):
-            st.markdown(f"#### 📘 Subject {i + 1}")
+            st.markdown(f"#### Subject {i + 1}")
             col1, col2, col3 = st.columns(3, gap="medium")
 
             with col1:
@@ -390,7 +351,7 @@ elif module == "📚 AI Study Planner":
             })
 
     st.write("")
-    if st.button("🚀 Generate Study Plan", use_container_width=False):
+    if st.button("Generate Study Plan  →"):
 
         valid_subjects = [
             subject
@@ -408,77 +369,75 @@ elif module == "📚 AI Study Planner":
             )
 
             st.success("Study plan generated successfully!")
-            st.markdown('<div class="section-kicker">Your results</div>', unsafe_allow_html=True)
             st.subheader("📋 Recommended Study Plan")
             st.dataframe(
                 plan,
-                use_container_width=True,
-                hide_index=True
+                use_container_width=True
             )
 
 # ==================================================
-# RESUME ANALYZER — existing functionality retained
+# RESUME ANALYZER — existing analysis retained
 # ==================================================
 elif module == "📄 AI Resume Analyzer":
 
-    st.markdown('<div class="section-kicker">Career readiness</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-label">Career readiness</div>', unsafe_allow_html=True)
     st.header("📄 AI Resume Analyzer")
     st.write(
         "Upload your resume to identify skills and receive a basic resume analysis."
     )
 
     st.write("")
-    st.markdown("#### Upload your resume")
-    st.caption("Choose a text-based PDF file for the best extraction results.")
+    st.markdown("#### Upload your resume (PDF)")
+    st.caption("For best results, upload a PDF that contains selectable text.")
 
     uploaded_file = st.file_uploader(
         "Upload your resume (PDF)",
-        type=["pdf"],
-        help="Only PDF files are supported."
+        type=["pdf"]
     )
 
     if uploaded_file is not None:
-        st.success(f"Ready to analyze: {uploaded_file.name}")
+        st.success(f"File ready: {uploaded_file.name}")
 
-        if st.button("🔍 Analyze Resume", use_container_width=False):
+        if st.button("Analyze Resume  →"):
 
-            with st.spinner("Analyzing your resume..."):
-                text = extract_text_from_pdf(uploaded_file)
+            with st.spinner("Analyzing resume..."):
+
+                text = extract_text_from_pdf(
+                    uploaded_file
+                )
+
                 result = analyze_resume(text)
 
             if not text.strip():
                 st.error(
                     "No readable text was extracted from this PDF. "
-                    "Try uploading a text-based PDF rather than a scanned image."
+                    "Try uploading a text-based PDF."
                 )
                 st.stop()
 
             st.success("Resume analysis completed!")
 
-            st.markdown('<div class="section-kicker">Analysis results</div>', unsafe_allow_html=True)
             st.subheader("📊 Resume Score")
-
             st.metric(
                 "Skill Coverage",
                 f"{result['score']}%"
             )
-
             st.caption(
-                "Skill coverage reflects the predefined skills detected by this "
-                "analyzer; it is not a formal ATS score."
+                "This score represents coverage of the analyzer's predefined "
+                "skill list; it is not a formal ATS score."
             )
 
             st.divider()
-            skills_col, missing_col = st.columns(2, gap="large")
+            col1, col2 = st.columns(2, gap="large")
 
-            with skills_col:
+            with col1:
                 st.subheader("✅ Detected Skills")
                 if result["skills"]:
                     st.write(", ".join(result["skills"]))
                 else:
                     st.write("No predefined skills detected.")
 
-            with missing_col:
+            with col2:
                 st.subheader("⚠️ Skills Not Detected")
                 if result["missing_skills"]:
                     st.write(", ".join(result["missing_skills"]))
