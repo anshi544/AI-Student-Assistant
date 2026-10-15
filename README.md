@@ -1,537 +1,256 @@
-# AI-Student-Assistant
-AI-based academic planning and resume analysis platform for students
+AI Student Career & Academic Assistant
 
+A web-based student support application built with Python and
+Streamlit that brings academic planning and basic career preparation
+tools together in one place.
 
-
-🎓 AI Student Career & Academic Assistant
-
-An integrated student-support platform that combines academic planning and career readiness analysis into a single Streamlit-based application.
-
-The project integrates two student-focused modules:
-
-- 📚 AI Study Planner — helps students prioritize subjects and allocate available study time based on deadlines and difficulty.
-- 📄 AI Resume Analyzer — analyzes a PDF resume, identifies predefined skills, calculates a skill-coverage score, and highlights skills that are not detected.
-
-The goal of the project is to provide students with a single platform for managing both academic preparation and career preparation.
-
----
+🔗 Live Demo:
+https://ai-student-assistant-dng942echs65vuvlrwiwqk.streamlit.app/\
+💻 GitHub Repository:
+https://github.com/anshi544/AI-Student-Assistant
 
 📌 Project Overview
 
-Students often manage academic preparation and career preparation separately. Academic work involves multiple subjects, deadlines, and different levels of difficulty, while career preparation requires students to understand their skills and improve their resumes.
+Students often need to manage subject deadlines, prepare for examinations, improve their resumes, and get ready for placements. This project provides a single web application with tools to support these activities.
 
-The AI Student Career & Academic Assistant brings these two areas together in one application.
+The application includes three primary modules:
 
-Academic Side
+AI Study Planner --- organizes study tasks using deadlines and
+difficulty levels, generates a weekly plan, provides study
+recommendations, and supports CSV downloads.
 
-The Study Planner helps a student answer:
+AI Resume Analyzer --- extracts text from PDF resumes,
+identifies skills using predefined skill matching, compares them
+with career-related skill checklists, and suggests skills to
+consider developing.
 
-«“What should I study first and how should I distribute my available study time?”»
+Student Chatbot --- provides basic academic, programming, and
+career guidance using predefined, topic-based responses.
 
-It considers:
+The application also supports user registration, email verification, and
+login through Supabase.
 
-- Subject name
-- Deadline
-- Difficulty level
-- Available study hours per day
+Implementation note: The chatbot currently uses topic-based
+response matching rather than a generative AI model. The Resume
+Analyzer uses PDF text extraction and predefined skill matching; it
+does not predict hiring outcomes.
 
-The system calculates a priority score and generates a prioritized study plan.
+✨ Features
 
-Career Side
+📚 Study Planner
 
-The Resume Analyzer helps a student answer:
+Add study tasks and subject information.
 
-«“What skills are currently visible in my resume and what areas can I improve?”»
+Prioritize tasks using difficulty and time remaining until
+deadlines.
 
-It:
+Generate an organized study plan and weekly timetable.
 
-- Accepts a PDF resume
-- Extracts text from the document
-- Searches for predefined skills
-- Calculates a basic skill-coverage score
-- Displays detected skills
-- Displays skills that were not detected
+View study recommendations.
 
----
+Download planning results as CSV files.
 
-🎯 Objectives
+The priority calculation uses the following heuristic:
 
-The major objectives of this project are:
+Priority Score = (Difficulty Score × 10) / max(Days Left, 1)
 
-1. To develop a unified platform for academic and career assistance.
-2. To help students organize their study schedules efficiently.
-3. To prioritize subjects using deadline and difficulty information.
-4. To analyze resumes using automated text processing.
-5. To identify skills present in a student's resume.
-6. To highlight skills that are not detected.
-7. To provide an easy-to-use web interface using Streamlit.
-8. To deploy the application through Streamlit Community Cloud.
-9. To demonstrate how multiple student-oriented intelligent tools can be integrated into one modular system.
+Difficulty scores: - Easy = 1 - Medium = 2 - Hard = 3
 
----
+This is a rule-based prioritization formula, not a trained
+machine-learning model.
 
-🧩 System Modules
+📄 Resume Analyzer
 
-1. 📚 AI Study Planner
+Upload a PDF resume.
 
-The Study Planner is designed to help students manage their academic workload.
+Extract text from the PDF using PyPDF2.
 
-Inputs
+Identify skills using predefined skill lists.
 
-The user provides:
+Compare detected skills with a selected career checklist.
 
-- Subject name
-- Deadline
-- Difficulty level:
-  - Easy
-  - Medium
-  - Hard
-- Available study hours per day
+Display relevant skills and suggest skills that were not detected.
 
-Processing
+A skill that is not detected may still be a skill the student possesses;
+it may simply be absent from the resume or expressed using different
+wording.
 
-The system assigns numerical values to difficulty levels and calculates a priority score using the deadline and difficulty.
+💬 Student Chatbot
 
-The subjects are then sorted according to their calculated priority.
+Ask basic academic, programming, and career-related questions.
 
-Available study hours are distributed proportionally according to the priority scores.
+Access topic-based guidance for supported subjects such as Python,
+DSA, DBMS, AI/ML, resumes, projects, and placement preparation.
 
-Output
+Receive predefined responses based on recognized topics.
 
-The system generates a table containing:
+The chatbot's responses are limited to the topics and rules implemented
+in the application.
 
-Information| Description
-Subject| Name of the subject
-Deadline| Target date
-Difficulty| Easy, Medium or Hard
-Priority Score| Calculated urgency/importance
-Recommended Hours| Suggested daily study allocation
+🔐 User Authentication
 
-Workflow
+Create an account.
 
-Student Input
-     ↓
-Subject Details
-     ↓
-Deadline + Difficulty
-     ↓
-Priority Calculation
-     ↓
-Subject Ranking
-     ↓
-Study-Hour Allocation
-     ↓
-Personalized Study Plan
-
----
-
-📄 2. AI Resume Analyzer
+Verify an email address.
 
-The Resume Analyzer provides basic automated resume analysis.
+Log in through Supabase authentication.
 
-Input
-
-The user uploads a resume in PDF format.
-
-Processing
-
-The system:
-
-1. Reads the uploaded PDF.
-2. Extracts text using "PyPDF2".
-3. Searches the extracted text for predefined skills.
-4. Identifies detected skills.
-5. Calculates a skill-coverage score.
-6. Identifies skills that were not detected.
-
-Output
-
-The application displays:
-
-- Resume skill-coverage score
-- Detected skills
-- Skills not detected
-- Extracted resume text
-
-Workflow
-
-Resume PDF
-     ↓
-PDF Text Extraction
-     ↓
-Resume Text
-     ↓
-Skill Detection
-     ↓
-Skill Coverage Calculation
-     ↓
-Detected Skills + Missing Skills
-
----
-
-🏗️ System Architecture
-
-                         ┌─────────────────────┐
-                         │        USER         │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-                         ┌─────────────────────┐
-                         │   STREAMLIT WEB UI  │
-                         └──────────┬──────────┘
-                                    │
-                     ┌──────────────┴──────────────┐
-                     │                             │
-                     ▼                             ▼
-          ┌─────────────────────┐       ┌─────────────────────┐
-          │  AI STUDY PLANNER   │       │  AI RESUME ANALYZER │
-          └──────────┬──────────┘       └──────────┬──────────┘
-                     │                             │
-                     ▼                             ▼
-          Deadline + Difficulty             PDF Resume
-                     │                             │
-                     ▼                             ▼
-             Priority Calculation           Text Extraction
-                     │                             │
-                     ▼                             ▼
-              Study Allocation              Skill Detection
-                     │                             │
-                     ▼                             ▼
-             Study Plan Output              Resume Analysis
-                     │                             │
-                     └──────────────┬──────────────┘
-                                    ▼
-                         ┌─────────────────────┐
-                         │  STUDENT SUPPORT    │
-                         │ Academic + Career   │
-                         └─────────────────────┘
-
----
-
-🔬 Methodology
-
-The project follows a modular application architecture.
-
-Step 1 — User Input
-
-The student selects the required module and provides the required information.
-
-Step 2 — Data Processing
-
-For the Study Planner, subject information is processed to determine priority.
-
-For the Resume Analyzer, PDF content is converted into text.
-
-Step 3 — Intelligent Analysis
-
-The Study Planner uses a rule-based priority calculation.
-
-The Resume Analyzer uses text processing and predefined skill matching.
-
-Step 4 — Result Generation
-
-The processed information is converted into understandable recommendations and analysis.
-
-Step 5 — Web Presentation
-
-Results are displayed through an interactive Streamlit interface.
-
-Step 6 — Deployment
-
-The application is deployed using Streamlit Community Cloud and the source code is maintained through GitHub.
-
----
-
-🧮 Study Priority Logic
-
-The Study Planner assigns difficulty values:
-
-Easy   → 1
-Medium → 2
-Hard   → 3
-
-The priority is influenced by:
-
-- Difficulty
-- Number of days remaining until the deadline
-
-A higher priority indicates that a subject requires greater attention.
-
-The available daily study hours are then distributed according to the relative priority of each subject.
-
-«Note: The current prototype uses a rule-based prioritization approach rather than a trained machine-learning model.»
-
----
-
-🧠 Resume Analysis Logic
-
-The Resume Analyzer currently uses a predefined skill list.
-
-Examples include:
-
-- Python
-- C
-- C++
-- Java
-- HTML
-- CSS
-- JavaScript
-- SQL
-- Machine Learning
-- Artificial Intelligence
-- Data Science
-- Deep Learning
-- Git
-- GitHub
-- Excel
-- Power BI
-- Tableau
-- Communication
-- Leadership
-
-The system searches the extracted resume text for these skills.
-
-The basic skill-coverage score is calculated as:
-
-Skill Coverage (%) =
-(Number of detected skills / Total predefined skills) × 100
-
-«Important: This is a prototype-level resume analysis score. It should not be interpreted as a professional ATS score or a complete evaluation of resume quality.»
-
----
+Maintain the user's authentication session within the application.
 
 🛠️ Technology Stack
 
-Technology| Purpose
-Python| Core programming language
-Streamlit| Web application interface
-PyPDF2| PDF text extraction
-GitHub| Source-code management and version control
-Jupyter Notebook| Experimentation and analysis
-Streamlit Community Cloud| Application deployment
+Technology                  Purpose
 
----
+Python                      Main programming language
+Streamlit                   Web interface and dashboard
+Supabase                    Authentication and backend services
+PyPDF2                      PDF text extraction
+Pandas                      Tabular data handling, where used
+GitHub                      Source-code hosting and version control
+Streamlit Community Cloud   Application deployment
 
-📁 Project Structure
+🗂️ Project Structure
 
 AI-Student-Assistant/
-│
-├── app.py
-├── planner.py
-├── resume_analyzer.py
-├── requirements.txt
-└── README.md
+├── app.py                 # Main Streamlit application
+├── planner.py             # Study planning and prioritization logic
+├── resume_analyzer.py     # PDF extraction and resume skill matching
+├── requirements.txt       # Python package dependencies
+└── README.md              # Project documentation
 
-"app.py"
+The repository may contain additional files as the project evolves.
 
-Acts as the main application controller and Streamlit interface.
+🚀 Run the Project Locally
 
-It provides navigation between the Study Planner and Resume Analyzer modules.
+Prerequisites
 
-"planner.py"
+Python 3.10 or a compatible Python version
 
-Contains the Study Planner logic, including:
+Git
 
-- Priority calculation
-- Subject ranking
-- Study-hour allocation
-
-"resume_analyzer.py"
-
-Contains the Resume Analyzer functionality, including:
-
-- PDF text extraction
-- Skill detection
-- Skill-coverage calculation
-- Missing-skill identification
-
-"requirements.txt"
-
-Contains the Python dependencies required to run the application.
-
-"README.md"
-
-Provides project documentation, methodology, setup instructions and technical information.
-
----
-
-🚀 Running the Project Locally
+A Supabase project with authentication configured
 
 1. Clone the repository
 
 git clone https://github.com/anshi544/AI-Student-Assistant.git
-
-2. Navigate to the project directory
-
 cd AI-Student-Assistant
 
-3. Install dependencies
+2. Install dependencies
 
 pip install -r requirements.txt
 
-4. Run the Streamlit application
+3. Configure Supabase secrets
+
+The application expects the following Streamlit secrets:
+
+SUPABASE_URL = "your-supabase-project-url"
+SUPABASE_KEY = "your-supabase-publishable-or-anon-key"
+
+For local development, save these values in .streamlit/secrets.toml.
+
+Make sure this secrets file is excluded from Git and never commit API
+keys, passwords, access tokens, or other private credentials. Use only
+the appropriate client-side/publishable key for this application; do not
+expose a Supabase service_role key.
+
+Configure Supabase email authentication and any required profile table
+or row-level security policies to match the application code.
+
+4. Start the Streamlit application
 
 streamlit run app.py
 
-The application will open in your browser.
-
----
+Streamlit will provide a local address, usually http://localhost:8501.
 
 ☁️ Deployment
 
-The application can be deployed using Streamlit Community Cloud.
+The project is hosted using GitHub and Streamlit Community Cloud.
 
-Deployment steps:
+Push the project files to GitHub.
 
-1. Push the project files to GitHub.
-2. Open Streamlit Community Cloud.
-3. Connect the GitHub repository.
-4. Select the repository.
-5. Select the "main" branch.
-6. Set "app.py" as the main file.
-7. Deploy the application.
+Sign in to Streamlit Community Cloud.
 
-The deployed application provides access to both modules through a single web interface.
+Create or select an app linked to the repository.
 
----
+Set app.py as the main application file.
 
-✅ Key Features
+Add SUPABASE_URL and SUPABASE_KEY in the app's Secrets settings.
 
-Academic Assistance
+Deploy the app and check the deployment logs if an error occurs.
 
-- Subject-based planning
-- Deadline-aware prioritization
-- Difficulty-based priority
-- Study-hour allocation
-- Interactive Streamlit interface
+Live application:
+https://ai-student-assistant-dng942echs65vuvlrwiwqk.streamlit.app/
 
-Career Assistance
+🔄 How It Works
 
-- PDF resume upload
-- Automated text extraction
-- Skill detection
-- Skill-coverage score
-- Missing-skill identification
+Study Planner
 
-Platform Features
+Student enters study information → planner calculates priority scores →
+tasks are organized → weekly plan and recommendations are displayed →
+results can be downloaded as CSV.
 
-- Single integrated application
-- Modular architecture
-- Simple user interface
-- GitHub-based development
-- Cloud deployment
-- No complex installation required for end users
+Resume Analyzer
 
----
+Student uploads a PDF → text is extracted → predefined skills are
+matched → results are compared with a career checklist → skill
+suggestions are displayed.
 
-🎓 Advantages
+Student Chatbot
 
-1. Provides academic and career assistance through one platform.
-2. Simple and beginner-friendly user interface.
-3. Helps students prioritize their academic workload.
-4. Provides quick resume skill analysis.
-5. Uses modular Python components.
-6. Can be accessed through a web browser after deployment.
-7. Can be extended with advanced AI/ML techniques in future versions.
+Student enters a question → the application matches it to a supported
+topic → a predefined response is displayed.
 
----
+Authentication
+
+Student registers or logs in → Supabase handles the authentication
+request → the application responds based on the authentication result
+and session.
 
 ⚠️ Current Limitations
 
-The current version is a prototype and has some limitations:
+Resume analysis depends on text that can be extracted from the
+uploaded PDF.
 
-- Study planning uses rule-based calculations.
-- Resume analysis relies on a predefined skill list.
-- The resume score represents skill coverage rather than complete resume quality.
-- Semantic understanding of resume content is limited.
-- The system does not currently compare a resume against a specific job description.
-- Study planning does not yet account for factors such as learning speed, previous performance or daily changes in availability.
+Image-only or unusually formatted PDFs may not yield usable text.
 
----
+Skill detection relies on predefined matching and may miss synonyms
+or differently phrased skills.
+
+The chatbot can answer only within its implemented topics and
+response rules.
+
+Study-plan usefulness depends on the accuracy of the information
+entered by the student.
+
+The priority score is a heuristic and should be treated as a
+planning aid, not a prediction.
 
 🔮 Future Scope
 
-The project can be enhanced in several ways.
+Potential improvements include: - Integrating a generative AI model for
+more flexible conversations. - Improving resume skill detection with
+semantic matching. - Adding student progress tracking and personalized
+recommendations. - Adding reminders and calendar integration. -
+Supporting more career paths and skill frameworks. - Gathering user
+feedback to improve the planning experience.
 
-AI/ML Enhancement
+These are proposed improvements and should not be interpreted as
+features already implemented.
 
-- Integrate machine-learning models for personalized recommendations.
-- Use NLP for deeper resume understanding.
-- Use semantic similarity for skill matching.
-- Detect contextual skills rather than exact keyword matches.
+🎯 Project Objective
 
-Resume Enhancement
+The objective of this project is to provide students with an accessible
+platform that supports study organization, resume skill review, and
+basic academic and career guidance through a single web application.
 
-- Add job-description matching.
-- Provide ATS-oriented feedback.
-- Identify missing keywords for a selected job role.
-- Recommend relevant skills and courses.
+👩‍💻 Author
 
-Study Planner Enhancement
+Anshika Saxena
+B.Tech --- Computer Science Engineering (Artificial Intelligence)
+SSIPMT
 
-- Generate weekly and monthly schedules.
-- Adapt plans according to completed tasks.
-- Track study progress.
-- Include revision and break scheduling.
-- Use historical performance to personalize recommendations.
+📄 License
 
-Integrated Student Dashboard
-
-Future versions can include:
-
-Student Profile
-      ↓
-Academic Performance
-      ↓
-Study Plan
-      ↓
-Skill Profile
-      ↓
-Resume Analysis
-      ↓
-Career Recommendations
-
-This can transform the current prototype into a more comprehensive AI-powered student academic and career assistant.
-
----
-
-📊 Expected Outcome
-
-The expected outcome of the project is a unified web-based platform that demonstrates how two practical student-support applications can be integrated into a single modular system.
-
-The system helps students:
-
-- Organize academic preparation.
-- Prioritize subjects.
-- Allocate study time.
-- Understand their resume's detected skills.
-- Identify areas for skill improvement.
-- Connect academic development with career readiness.
-
----
-
-👩‍💻 Project Information
-
-Project: AI Student Career & Academic Assistant
-Domain: Artificial Intelligence / Student Assistance
-Program: B.Tech CSE (Artificial Intelligence)
-Semester: 5th Semester
-Platform: Streamlit
-Source Code: GitHub
-Deployment: Streamlit Community Cloud
-
----
-
-📜 Conclusion
-
-The AI Student Career & Academic Assistant integrates academic planning and career-readiness analysis into a single accessible platform.
-
-The Study Planner focuses on what the student should study and how to prioritize it, while the Resume Analyzer focuses on what skills are visible in the student's resume and what areas may require improvement.
-
-The modular design makes the system easy to understand, maintain and extend. Although the current version uses rule-based prioritization and predefined skill matching, it provides a foundation for incorporating more advanced machine-learning and natural-language-processing techniques in future development.
-
----
-
-⭐ Project Vision
-
-«“Helping students plan better, understand their skills, and prepare for their careers through one integrated platform.”»
+No license has been specified for this repository. If you intend to
+allow others to reuse, modify, or distribute the code, consider adding
+an appropriate open-source license.
