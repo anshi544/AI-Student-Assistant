@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import date
+from html import escape
 from supabase import create_client, Client
 
 from planner import generate_plan
@@ -13,6 +14,185 @@ st.set_page_config(
     page_title="AI Student Assistant",
     page_icon="🎓",
     layout="wide",
+)
+
+# --------------------------------------------------
+# VISUAL DESIGN SYSTEM — MODERN AI DASHBOARD
+# --------------------------------------------------
+st.markdown(
+    """
+    <style>
+    :root {
+        --ink: #14213d;
+        --muted: #64748b;
+        --blue: #2563eb;
+        --cyan: #06b6d4;
+        --surface: #ffffff;
+        --line: #e2e8f0;
+    }
+    .stApp {
+        background:
+            radial-gradient(circle at 95% 0%, rgba(37, 99, 235, 0.07), transparent 25rem),
+            #f7f9fd;
+    }
+    [data-testid="stHeader"] {
+        background: rgba(247, 249, 253, 0.88);
+    }
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+        max-width: 1200px;
+    }
+    h1, h2, h3 {
+        color: #14213d;
+        letter-spacing: -0.025em;
+    }
+    h1 { font-weight: 800; }
+    h2, h3 { font-weight: 750; }
+    p, label, .stCaption {
+        color: #475569;
+    }
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #101d3a 0%, #172b50 100%);
+        border-right: 1px solid rgba(255,255,255,0.08);
+    }
+    [data-testid="stSidebar"] * {
+        color: #f8fafc;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] label {
+        border-radius: 10px;
+        padding: 0.35rem 0.45rem;
+    }
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+        color: #dbeafe;
+    }
+    [data-testid="stSidebar"] hr {
+        border-color: rgba(255,255,255,0.15);
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        border-radius: 18px;
+        border-color: #e2e8f0;
+        background: rgba(255,255,255,0.88);
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.035);
+    }
+    div.stButton > button,
+    div[data-testid="stFormSubmitButton"] > button {
+        border-radius: 10px;
+        font-weight: 650;
+        min-height: 2.65rem;
+        transition: all 0.18s ease;
+    }
+    div.stButton > button[kind="primary"],
+    div[data-testid="stFormSubmitButton"] > button[kind="primary"] {
+        border: 0;
+        background: linear-gradient(110deg, #2563eb, #0891b2);
+        color: white;
+    }
+    div.stButton > button:hover,
+    div[data-testid="stFormSubmitButton"] > button:hover {
+        border-color: #2563eb;
+        transform: translateY(-1px);
+    }
+    [data-testid="stTextInput"] input,
+    [data-testid="stTextArea"] textarea,
+    [data-testid="stNumberInput"] input,
+    [data-testid="stDateInput"] input,
+    [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+        border-radius: 10px;
+    }
+    [data-testid="stMetric"] {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 15px;
+        padding: 1rem 1.1rem;
+        box-shadow: 0 5px 18px rgba(15, 23, 42, 0.035);
+    }
+    [data-testid="stTabs"] button {
+        font-weight: 650;
+    }
+    .app-eyebrow {
+        color: #2563eb;
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        margin-bottom: 0.45rem;
+    }
+    .app-hero {
+        padding: 1.7rem 1.8rem;
+        border-radius: 22px;
+        color: white;
+        background: linear-gradient(115deg, #101d3a 0%, #1e40af 58%, #0891b2 100%);
+        box-shadow: 0 16px 38px rgba(30, 64, 175, 0.18);
+        margin: 0.5rem 0 1.4rem 0;
+    }
+    .app-hero h2 {
+        color: white;
+        margin: 0.25rem 0 0.45rem 0;
+        font-size: clamp(1.65rem, 3vw, 2.35rem);
+    }
+    .app-hero p {
+        color: #e0f2fe;
+        margin: 0;
+        max-width: 760px;
+        line-height: 1.6;
+    }
+    .app-hero .hero-tag {
+        display: inline-block;
+        color: #e0f2fe;
+        border: 1px solid rgba(255,255,255,0.28);
+        border-radius: 999px;
+        padding: 0.25rem 0.65rem;
+        font-size: 0.78rem;
+        margin-bottom: 0.35rem;
+    }
+    .feature-card {
+        height: 100%;
+        min-height: 185px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        padding: 1.25rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    }
+    .feature-card .icon {
+        display: inline-flex;
+        width: 2.6rem;
+        height: 2.6rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: #eff6ff;
+        font-size: 1.35rem;
+        margin-bottom: 0.75rem;
+    }
+    .feature-card h3 {
+        font-size: 1.05rem;
+        margin: 0 0 0.45rem 0;
+        color: #14213d;
+    }
+    .feature-card p {
+        color: #64748b;
+        font-size: 0.92rem;
+        line-height: 1.55;
+        margin: 0;
+    }
+    .section-label {
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        color: #64748b;
+        text-transform: uppercase;
+        margin: 1.1rem 0 0.7rem 0;
+    }
+    @media (max-width: 700px) {
+        .block-container { padding-top: 1rem; }
+        .app-hero { padding: 1.25rem; border-radius: 16px; }
+        .feature-card { min-height: auto; }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 # --------------------------------------------------
@@ -68,8 +248,17 @@ def restore_supabase_session():
 
 
 def show_auth_page():
-    st.title("🎓 AI Student Career & Academic Assistant")
-    st.write("Sign in or create an account to access your student workspace.")
+    st.markdown(
+        """
+        <div class="app-hero">
+            <span class="hero-tag">STUDENT SUCCESS • POWERED BY AI</span>
+            <h2>AI Student Career &amp; Academic Assistant</h2>
+            <p>Your personal workspace for academic planning, resume insights, and career readiness.
+            Sign in or create an account to continue.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     login_tab, signup_tab, resend_tab = st.tabs(
         ["🔐 Log in", "📝 Create account", "✉️ Resend verification"]
@@ -238,12 +427,16 @@ except Exception:
 # --------------------------------------------------
 # HEADER / NAVIGATION
 # --------------------------------------------------
-st.title("🎓 AI Student Career & Academic Assistant")
-st.caption("Your workspace for academic planning and career readiness.")
+st.markdown('<div class="app-eyebrow">AI-POWERED STUDENT WORKSPACE</div>', unsafe_allow_html=True)
+st.title("AI Student Career & Academic Assistant")
+st.caption("One workspace to plan your studies, strengthen your resume, and prepare for your career.")
 
 with st.sidebar:
-    st.title("Student Workspace")
-    st.write(f"Signed in as **{user_email}**")
+    st.markdown("## 🎓 Student Hub")
+    st.caption("LEARN • PLAN • GROW")
+    st.divider()
+    st.write(f"**Signed in as**")
+    st.caption(user_email)
     module = st.radio(
         "Navigation",
         [
@@ -271,29 +464,77 @@ with st.sidebar:
 # DASHBOARD
 # ==================================================
 if module == "🏠 Dashboard":
-    st.header(f"Welcome, {profile.get('full_name') or 'Student'}! 👋")
-    st.write(
-        "Use your personal workspace to organize study time, review your resume skills, "
-        "and keep your academic profile up to date."
+    student_name = escape((profile.get("full_name") or "").strip().split(" ")[0] or "Student")
+    st.markdown(
+        f"""
+        <div class="app-hero">
+            <span class="hero-tag">YOUR PERSONAL LEARNING SPACE</span>
+            <h2>Welcome back, {student_name}! 👋</h2>
+            <p>Build better study habits, understand your skills, and take the next step
+            toward your academic and career goals.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("📚 AI Study Planner")
-        st.write("Prioritize subjects using deadlines, difficulty, and your available study hours.")
-    with col2:
-        st.subheader("📄 AI Resume Analyzer")
-        st.write("Upload a PDF resume to identify listed skills and skills to consider developing.")
+    st.markdown('<div class="section-label">YOUR WORKSPACE</div>', unsafe_allow_html=True)
+    card1, card2, card3 = st.columns(3)
+    with card1:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <div class="icon">📚</div>
+                <h3>AI Study Planner</h3>
+                <p>Organize subjects by deadlines and difficulty, then generate a study plan
+                around the time you have available.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with card2:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <div class="icon">📄</div>
+                <h3>AI Resume Analyzer</h3>
+                <p>Review detected skills, explore skill coverage, and identify areas to
+                consider developing for your career goals.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with card3:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <div class="icon">👤</div>
+                <h3>Student Profile</h3>
+                <p>Keep your name, course, and current study year up to date in your
+                personal student workspace.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    st.info("Use the navigation menu in the sidebar to open a module or edit your profile.")
+    st.markdown('<div class="section-label">QUICK OVERVIEW</div>', unsafe_allow_html=True)
+    metric1, metric2, metric3 = st.columns(3)
+    with metric1:
+        st.metric("Learning tools", "02", help="Study Planner and Resume Analyzer")
+    with metric2:
+        st.metric("Account status", "Verified login", help="You are signed in to your workspace")
+    with metric3:
+        st.metric("Profile", "Personalized", help="Update your details from My Profile")
+
+    st.info("Choose a module from the sidebar to get started. Your existing tools are ready to use.")
 
 
 # ==================================================
 # PROFILE
 # ==================================================
 elif module == "👤 My Profile":
+    st.markdown('<div class="app-eyebrow">YOUR ACCOUNT</div>', unsafe_allow_html=True)
     st.header("👤 My Student Profile")
-    st.write("Update the details associated with your account.")
+    st.write("Manage the details associated with your student workspace.")
 
     with st.form("profile_form"):
         full_name = st.text_input("Full name", value=profile.get("full_name") or "")
@@ -330,8 +571,10 @@ elif module == "👤 My Profile":
 # STUDY PLANNER (EXISTING FUNCTIONALITY PRESERVED)
 # ==================================================
 elif module == "📚 AI Study Planner":
+    st.markdown('<div class="app-eyebrow">PLAN WITH PURPOSE</div>', unsafe_allow_html=True)
     st.header("📚 AI Study Planner")
     st.write("Create a personalized study plan based on your subjects, deadlines and difficulty levels.")
+    st.info("Tip: Add each subject with its deadline and difficulty so the planner can prioritize your workload.")
 
     daily_hours = st.number_input(
         "Available study hours per day",
@@ -374,8 +617,10 @@ elif module == "📚 AI Study Planner":
 # RESUME ANALYZER (EXISTING FUNCTIONALITY PRESERVED)
 # ==================================================
 elif module == "📄 AI Resume Analyzer":
+    st.markdown('<div class="app-eyebrow">CAREER READINESS</div>', unsafe_allow_html=True)
     st.header("📄 AI Resume Analyzer")
-    st.write("Upload your resume to identify skills and receive a basic resume analysis.")
+    st.write("Upload your resume to identify skills and review your current skill coverage.")
+    st.info("For best results, upload a text-based PDF rather than a scanned image of a resume.")
 
     uploaded_file = st.file_uploader("Upload your resume (PDF)", type=["pdf"])
     if uploaded_file is not None and st.button("🔍 Analyze Resume"):
