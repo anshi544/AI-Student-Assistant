@@ -3,7 +3,7 @@ from datetime import date
 from html import escape
 from supabase import create_client, Client
 
-from planner import generate_plan
+from planner import generate_plan, generate_weekly_plan, get_study_recommendations
 from resume_analyzer import extract_text_from_pdf, analyze_resume, CAREER_SKILLS
 
 
@@ -568,49 +568,174 @@ elif module == "👤 My Profile":
 
 
 # ==================================================
-# STUDY PLANNER (EXISTING FUNCTIONALITY PRESERVED)
+# STUDY PLANNER (ENHANCED DAILY + WEEKLY PLANNING)
 # ==================================================
 elif module == "📚 AI Study Planner":
     st.markdown('<div class="app-eyebrow">PLAN WITH PURPOSE</div>', unsafe_allow_html=True)
     st.header("📚 AI Study Planner")
-    st.write("Create a personalized study plan based on your subjects, deadlines and difficulty levels.")
-    st.info("Tip: Add each subject with its deadline and difficulty so the planner can prioritize your workload.")
+    st.write(
+        "Build a practical study plan using subject deadlines and difficulty. "
+        "Review daily priorities, a weekly timetable, and study recommendations."
+    )
+    st.info(
+        "For useful results, enter each subject's actual deadline and difficulty. "
+        "The planner uses these details to prioritize study time."
+    )
 
     daily_hours = st.number_input(
         "Available study hours per day",
-        min_value=1.0,
-        max_value=24.0,
+        min_value=0.5,
+        max_value=16.0,
         value=4.0,
         step=0.5,
+        help="Enter focused study time, excluding meals and long breaks.",
+        key="planner_daily_hours",
     )
-    st.subheader("Enter Subject Details")
+    schedule_days = st.selectbox(
+        "Schedule length",
+        options=[3, 5, 7],
+        index=2,
+        format_func=lambda value: f"{value} days",
+        key="planner_schedule_days",
+    )
+
+    st.subheader("📝 Subject Details")
     number_of_subjects = st.number_input(
-        "Number of subjects", min_value=1, max_value=10, value=3, step=1
+        "Number of subjects", min_value=1, max_value=10, value=3, step=1,
+        key="planner_subject_count",
     )
 
     subjects = []
     for i in range(int(number_of_subjects)):
-        st.markdown(f"### Subject {i + 1}")
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            name = st.text_input("Subject name", key=f"name_{i}")
-        with col2:
-            deadline = st.date_input("Deadline", value=date.today(), key=f"deadline_{i}")
-        with col3:
-            difficulty = st.selectbox(
-                "Difficulty", ["Easy", "Medium", "Hard"], key=f"difficulty_{i}"
-            )
-        subjects.append({"name": name, "deadline": deadline, "difficulty": difficulty})
+        with st.container(border=True):
+            st.markdown(f"**Subject {i + 1}**")
+            col1, col2, col3 = st.columns([1.4, 1, 1])
+            with col1:
+                name = st.text_input("Subject name", key=f"name_{i}")
+            with col2:
+                deadline = st.date_input(
+                    "Deadline", value=date.today(), key=f"deadline_{i}"
+                )
+            with col3:
+                difficulty = st.selectbox(
+                    "Difficulty", ["Easy", "Medium", "Hard"], key=f"difficulty_{i}"
+                )
+            subjects.append({
+                "name": name.strip(),
+                "deadline": deadline,
+                "difficulty": difficulty,
+            })
 
-    if st.button("🚀 Generate Study Plan"):
-        valid_subjects = [subject for subject in subjects if subject["name"].strip()]
+    if st.button("🚀 Generate Study Schedule", type="primary", use_container_width=True):
+        valid_subjects = [subject for subject in subjects if subject["name"]]
         if not valid_subjects:
-            st.warning("Please enter at least one subject.")
+            st.warning("Please enter at least one subject name.")
+            st.session_state.pop("study_plan_results", None)
         else:
-            plan = generate_plan(valid_subjects, daily_hours)
-            st.success("Study plan generated successfully!")
-            st.subheader("📋 Recommended Study Plan")
-            st.dataframe(plan, use_container_width=True)
+            try:
+                st.session_state.study_plan_results = {
+                    "subjects": valid_subjects,
+                    "daily_hours": float(daily_hours),
+                    "days": int(schedule_days),
+                    "plan": generate_plan(valid_subjects, float(daily_hours)),
+                    "weekly": generate_weekly_plan(
+                        valid_subjects, float(daily_hours), days=int(schedule_days)
+                    ),
+                    "recommendations": get_study_recommendations(valid_subjects),
+                }
+            except Exception as exc:
+                st.error("We couldn't generate the schedule. Check your subject details and try again.")
+                with st.expander("Technical details"):
+                    st.code(str(exc))
+
+    results = st.session_state.get("study_plan_results")
+    if results:
+        st.divider()
+        st.subheader("📊 Your Study Overview")
+        total_subjects = len(results["subjects"])
+        urgent_subjects = sum(
+            1 for item in results["subjects"] if item["deadline"] <= date.today()
+        )
+        m1, m2, m3 = st.columns(3)
+        with m1:
+            st.metric("Subjects", total_subjects)
+        with m2:
+            st.metric("Daily Study Time", f"{results['daily_hours']:g} hrs")
+        with m3:
+            st.metric("Deadlines Today or Passed", urgent_subjects)
+
+        plan_tab, week_tab, tips_tab = st.tabs(
+            ["🎯 Priority Plan", "🗓️ Timetable", "💡 Recommendations"]
+        )
+
+        with plan_tab:
+            st.markdown("#### Recommended Study Allocation")
+            st.caption(
+                "Subjects are ranked by deadline urgency and difficulty. Recommended hours "
+                "are proportional to the priority score."
+            )
+            display_plan = []
+            for item in results["plan"]:
+                display_plan.append({
+                    "Subject": item["Subject"],
+                    "Deadline": item["Deadline"],
+                    "Difficulty": item["Difficulty"],
+                    "Priority Score": item["Priority Score"],
+                    "Recommended Hours/Day": item["Recommended Hours"],
+                })
+            st.dataframe(display_plan, use_container_width=True, hide_index=True)
+            st.download_button(
+                "⬇️ Download priority plan (CSV)",
+                data=__import__("pandas").DataFrame(display_plan).to_csv(index=False).encode("utf-8"),
+                file_name="study_priority_plan.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+
+        with week_tab:
+            st.markdown(f"#### Your {results['days']}-Day Study Timetable")
+            st.caption(
+                "The schedule rotates subjects, limits each day to up to three subjects, "
+                "and labels periodic sessions as revision. Use the plan as a starting point "
+                "and adjust it to your actual class timetable."
+            )
+            weekly_rows = []
+            for item in results["weekly"]:
+                weekly_rows.append({
+                    "Day": item["Day"],
+                    "Date": item["Date"],
+                    "Subject": item["Subject"],
+                    "Study Hours": item["Study Hours"],
+                    "Session Length (min)": item["Session Length (minutes)"],
+                    "Session Type": item["Session Type"],
+                })
+            if weekly_rows:
+                st.dataframe(weekly_rows, use_container_width=True, hide_index=True)
+                st.download_button(
+                    "⬇️ Download timetable (CSV)",
+                    data=__import__("pandas").DataFrame(weekly_rows).to_csv(index=False).encode("utf-8"),
+                    file_name="weekly_study_timetable.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                )
+            else:
+                st.info("Enter a positive daily study time to create a timetable.")
+
+            st.markdown("#### Suggested Study Rhythm")
+            st.markdown(
+                "- **Focused block:** study for 25–50 minutes.\\n"
+                "- **Short break:** take 5–10 minutes between focused blocks.\\n"
+                "- **Revision:** test yourself or solve practice questions instead of only rereading notes."
+            )
+
+        with tips_tab:
+            st.markdown("#### Next Best Actions")
+            for index, recommendation in enumerate(results["recommendations"], start=1):
+                st.markdown(f"{index}. {recommendation}")
+
+        if st.button("🧹 Clear generated schedule", key="clear_study_schedule"):
+            st.session_state.pop("study_plan_results", None)
+            st.rerun()
 
 
 # ==================================================
