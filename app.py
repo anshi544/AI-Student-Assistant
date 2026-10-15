@@ -164,11 +164,18 @@ def show_auth_page():
                             "Registration started! Check your inbox for the verification email. "
                             "After verifying, return here and log in."
                         )
-                except Exception:
-                    st.error(
-                        "Registration failed. The email may already be registered, or Supabase "
-                        "may be limiting email delivery. Check the Supabase Auth logs/settings and try again."
-                    )
+                except Exception as exc:
+                    # Show the Supabase error details to help diagnose registration failures.
+                    # Do not display credentials, access tokens, or request headers.
+                    error_text = str(exc).strip()
+                    st.error("Registration failed.")
+                    if error_text:
+                        st.code(f"{type(exc).__name__}: {error_text[:1200]}")
+                    else:
+                        st.info(
+                            "Supabase returned an empty error message. Check the Auth logs "
+                            "in your Supabase dashboard."
+                        )
 
     with resend_tab:
         st.write("If you registered but did not receive a verification email, request another.")
