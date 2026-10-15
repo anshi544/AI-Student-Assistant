@@ -247,6 +247,108 @@ def restore_supabase_session():
     return False
 
 
+def get_student_chatbot_response(message: str) -> str:
+    """Return a topic-based response without calling an external AI API."""
+    text = " ".join((message or "").lower().strip().split())
+    if not text:
+        return "Please type a question so I can help. You can ask about Python, DSA, placements, careers, AI/ML, or study planning."
+
+    rules = [
+        (("hello", "hi", "hey", "good morning", "good evening"),
+         """Hello! 👋 I'm your Student Assistant chatbot. I can help with study planning, Python, DSA, placements, career skills, and AI/ML. What would you like to work on today?"""),
+        (("python", "learn programming", "programming basics", "coding basics"),
+         """🐍 **Python learning path**
+
+1. Learn variables, data types, input/output, and operators.
+2. Practise conditions, loops, and functions.
+3. Learn strings, lists, tuples, sets, and dictionaries.
+4. Practise file handling, exceptions, and basic modules.
+5. Solve small problems daily and then move to DSA.
+
+**Practice task:** Write a program that counts vowels in a string, then try it with different inputs."""),
+        (("dsa", "data structures", "algorithms", "leetcode", "coding interview"),
+         """💻 **DSA preparation path**
+
+Start with time complexity, arrays, strings, and hashing. Then study linked lists, stacks, queues, binary search, sorting, recursion, trees, heaps, graphs, and dynamic programming.
+
+A useful daily routine is 20 minutes of concept revision, 45–60 minutes solving 1–2 problems, and 10 minutes reviewing mistakes. Focus on understanding the approach before memorizing code."""),
+        (("placement", "interview", "job preparation", "campus drive", "aptitude"),
+         """🚀 **Placement preparation plan**
+
+- **Technical:** Python fundamentals, OOP, DSA, DBMS, SQL, operating systems, and computer networks.
+- **Aptitude:** percentages, ratios, averages, time and work, logical reasoning, and verbal ability.
+- **Projects:** explain the problem, your contribution, tools used, workflow, limitations, and future improvements.
+- **HR:** prepare a concise introduction, project explanation, strengths, and examples of teamwork.
+
+Practise a few aptitude questions and one coding problem each day, and revise your resume before the drive."""),
+        (("career", "career path", "which field", "job role", "career goal"),
+         """💼 **Choosing a career path**
+
+- **Software development:** Python or Java, DSA, OOP, Git, APIs, and databases.
+- **Data analytics:** Excel, SQL, statistics, Python, and Power BI/Tableau.
+- **AI/ML:** Python, statistics, linear algebra basics, data preparation, model evaluation, and projects.
+- **Web development:** HTML, CSS, JavaScript, a frontend framework, APIs, and databases.
+
+Choose one target role first, review several job descriptions, identify repeated skills, and build a small project that demonstrates them."""),
+        (("machine learning", " ai/ml", "ai ml", "artificial intelligence", "deep learning", "neural network"),
+         """🤖 **AI/ML learning path**
+
+1. Strengthen Python and core libraries such as NumPy and pandas.
+2. Learn descriptive statistics, probability, and basic linear algebra.
+3. Study supervised learning: linear/logistic regression, decision trees, random forests, and SVM.
+4. Learn model evaluation, overfitting, train/test splits, and data leakage.
+5. Build projects, document your results, and explain limitations.
+
+Start with a small, well-understood dataset before moving to deep learning."""),
+        (("resume", "cv", "skills", "skill gap", "resume analyzer"),
+         """📄 **Improve your resume**
+
+- Tailor the skills and project descriptions to the role you're applying for.
+- Describe projects with the problem, tools, your actions, and measurable results where you can support them.
+- Include only skills you can explain and demonstrate.
+- Keep formatting consistent and proofread carefully.
+
+You can use the **AI Resume Analyzer** module in this app to compare detected resume skills with a selected role checklist. Its coverage score is a checklist match, not a hiring prediction."""),
+        (("study plan", "study schedule", "timetable", "manage time", "exam preparation", "study"),
+         """📚 **Build a practical study routine**
+
+1. List subjects, exam dates, and difficult topics.
+2. Prioritize urgent and challenging subjects.
+3. Divide available time into focused blocks of 25–50 minutes, with short breaks.
+4. Reserve time for active recall, practice questions, and revision.
+5. Review progress daily and adjust the next day's plan.
+
+Open **AI Study Planner** in this app to generate a deadline- and difficulty-based schedule."""),
+        (("project", "minor project", "github", "streamlit", "portfolio"),
+         """🛠️ **Project development checklist**
+
+- Define the problem and intended users.
+- Break the app into small modules and test each module.
+- Keep secrets such as API keys and passwords out of GitHub.
+- Document setup, features, limitations, and future scope in the README.
+- Test the deployed app with valid inputs, empty inputs, and error cases.
+
+For your project explanation, be ready to describe the architecture, technologies, your own contribution, and what you would improve next."""),
+        (("sql", "database", "dbms", "normalization", "joins"),
+         """🗄️ **DBMS and SQL preparation**
+
+Study keys, constraints, ER diagrams, normalization, transactions, ACID properties, indexing, and relational algebra basics. Practise SQL SELECT, WHERE, GROUP BY, HAVING, joins, subqueries, and aggregate functions.
+
+**Practice task:** Given Students and Marks tables, write a query to list each student with their average marks."""),
+        (("thank", "thanks", "thank you"),
+         """You're welcome! 😊 Ask me another question about studies, programming, careers, placements, resumes, or AI/ML whenever you're ready."""),
+    ]
+    for keywords, response in rules:
+        if any(keyword in text for keyword in keywords):
+            return response
+
+    return ("I don't have a tailored response for that topic in my current offline knowledge base yet. "
+            "I can currently help with **Python, DSA, placement preparation, career paths, AI/ML, resumes, "
+            "study planning, projects, and DBMS/SQL**. Try asking a more specific question in one of these areas. "
+            "This version works without an external AI API, so it uses topic-based responses rather than generating "
+            "open-ended answers like a large language model.")
+
+
 def show_auth_page():
     st.markdown(
         """
@@ -444,6 +546,7 @@ with st.sidebar:
             "👤 My Profile",
             "📚 AI Study Planner",
             "📄 AI Resume Analyzer",
+            "🤖 Student Chatbot",
         ],
     )
     if st.button("Log out", use_container_width=True):
@@ -478,7 +581,7 @@ if module == "🏠 Dashboard":
     )
 
     st.markdown('<div class="section-label">YOUR WORKSPACE</div>', unsafe_allow_html=True)
-    card1, card2, card3 = st.columns(3)
+    card1, card2, card3, card4 = st.columns(4)
     with card1:
         st.markdown(
             """
@@ -511,6 +614,18 @@ if module == "🏠 Dashboard":
                 <h3>Student Profile</h3>
                 <p>Keep your name, course, and current study year up to date in your
                 personal student workspace.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with card4:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <div class="icon">🤖</div>
+                <h3>Student Chatbot</h3>
+                <p>Get instant topic-based guidance for programming, placements, careers,
+                AI/ML, and study habits—without an API key.</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -818,3 +933,54 @@ elif module == "📄 AI Resume Analyzer":
             st.error("We couldn't analyze this PDF. Please try another text-based PDF resume.")
             with st.expander("Technical details"):
                 st.code(str(exc))
+
+
+# ==================================================
+# STUDENT CHATBOT (OFFLINE RULE-BASED; NO API KEY)
+# ==================================================
+elif module == "🤖 Student Chatbot":
+    st.markdown('<div class="app-eyebrow">YOUR STUDY & CAREER COMPANION</div>', unsafe_allow_html=True)
+    st.header("🤖 Student Chatbot")
+    st.write(
+        "Ask about programming, study planning, placements, career skills, resumes, AI/ML, "
+        "projects, or DBMS/SQL. This chatbot uses a local rule-based knowledge base and does not call an external AI service."
+    )
+    st.info("Offline chatbot • No API key • No API usage charges • Responses are topic-based, not generated by a large AI model.")
+
+    if "student_chat_history" not in st.session_state:
+        st.session_state.student_chat_history = [
+            {"role": "assistant", "content": "Hi! 👋 I'm your Student Assistant. What would you like help with today? Try asking about Python, DSA, placements, career options, AI/ML, resumes, or study planning."}
+        ]
+
+    st.markdown("#### 💡 Try a suggested question")
+    suggested_questions = [
+        "How do I start learning Python?",
+        "Give me a placement preparation plan",
+        "How should I prepare DSA?",
+        "Explain the AI/ML learning path",
+    ]
+    suggestion_cols = st.columns(2)
+    for index, question in enumerate(suggested_questions):
+        with suggestion_cols[index % 2]:
+            if st.button(question, key=f"chat_suggestion_{index}", use_container_width=True):
+                st.session_state.student_chat_history.append({"role": "user", "content": question})
+                st.session_state.student_chat_history.append({"role": "assistant", "content": get_student_chatbot_response(question)})
+                st.rerun()
+
+    st.divider()
+    for message in st.session_state.student_chat_history:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    user_prompt = st.chat_input("Ask a study or career question...")
+    if user_prompt:
+        st.session_state.student_chat_history.append({"role": "user", "content": user_prompt})
+        reply = get_student_chatbot_response(user_prompt)
+        st.session_state.student_chat_history.append({"role": "assistant", "content": reply})
+        st.rerun()
+
+    if st.button("🧹 Clear chat history", key="clear_student_chat"):
+        st.session_state.student_chat_history = [
+            {"role": "assistant", "content": "Chat cleared. 👋 Ask me about Python, DSA, placements, careers, AI/ML, resumes, projects, or study planning."}
+        ]
+        st.rerun()
