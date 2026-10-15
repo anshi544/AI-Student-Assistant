@@ -4,7 +4,7 @@ from html import escape
 from supabase import create_client, Client
 
 from planner import generate_plan
-from resume_analyzer import extract_text_from_pdf, analyze_resume
+from resume_analyzer import extract_text_from_pdf, analyze_resume, CAREER_SKILLS
 
 
 # --------------------------------------------------
@@ -619,30 +619,77 @@ elif module == "📚 AI Study Planner":
 elif module == "📄 AI Resume Analyzer":
     st.markdown('<div class="app-eyebrow">CAREER READINESS</div>', unsafe_allow_html=True)
     st.header("📄 AI Resume Analyzer")
-    st.write("Upload your resume to identify skills and review your current skill coverage.")
-    st.info("For best results, upload a text-based PDF rather than a scanned image of a resume.")
+    st.write("Review skills detected in your resume and compare them with a checklist for your target role.")
+    st.info(
+        "The skill coverage percentage measures matches against the selected role's checklist. "
+        "It is not an overall resume-quality score or a prediction of hiring outcomes."
+    )
 
-    uploaded_file = st.file_uploader("Upload your resume (PDF)", type=["pdf"])
-    if uploaded_file is not None and st.button("🔍 Analyze Resume"):
-        with st.spinner("Analyzing resume..."):
-            text = extract_text_from_pdf(uploaded_file)
-            result = analyze_resume(text)
+    career_goal = st.selectbox(
+        "Choose your target career",
+        options=list(CAREER_SKILLS.keys()),
+        key="resume_career_goal",
+    )
+    uploaded_file = st.file_uploader("Upload your resume (PDF)", type=["pdf"], key="resume_pdf_upload")
 
-        st.success("Resume analysis completed!")
-        st.subheader("📊 Resume Score")
-        st.metric("Skill Coverage", f"{result['score']}%")
+    if uploaded_file is not None and st.button("🔍 Analyze Resume", type="primary"):
+        try:
+            with st.spinner("Analyzing resume skills..."):
+                text = extract_text_from_pdf(uploaded_file)
+                if not text.strip():
+                    st.warning(
+                        "No selectable text was found in this PDF. If it is a scanned resume, "
+                        "try exporting it as a text-based PDF and upload it again."
+                    )
+                    st.stop()
+                result = analyze_resume(text, career_goal=career_goal)
 
-        st.subheader("✅ Detected Skills")
-        if result["skills"]:
-            st.write(", ".join(result["skills"]))
-        else:
-            st.write("No predefined skills detected.")
+            st.success("Resume analysis completed!")
+            st.markdown(f"### 🎯 Target role: {result['career_goal']}")
+            metric1, metric2, metric3 = st.columns(3)
+            with metric1:
+                st.metric("Role Skill Coverage", f"{result['score']}%")
+            with metric2:
+                st.metric("Matched Skills", len(result["matched_skills"]))
+            with metric3:
+                st.metric("Skills to Explore", len(result["missing_skills"]))
 
-        st.subheader("⚠️ Skills Not Detected")
-        if result["missing_skills"]:
-            st.write(", ".join(result["missing_skills"]))
-        else:
-            st.write("All listed skills were detected.")
+            st.progress(result["score"] / 100)
 
-        with st.expander("View Extracted Resume Text"):
-            st.text(text)
+            matched_col, gap_col = st.columns(2)
+            with matched_col:
+                st.subheader("✅ Skills Found for This Role")
+                if result["matched_skills"]:
+                    for skill in result["matched_skills"]:
+                        st.markdown(f"- {skill}")
+                else:
+                    st.write("No skills from this role checklist were detected yet.")
+            with gap_col:
+                st.subheader("🧭 Skills to Consider Developing")
+                if result["missing_skills"]:
+                    for skill in result["missing_skills"]:
+                        st.markdown(f"- {skill}")
+                else:
+                    st.write("All skills in this role checklist were detected.")
+
+            st.subheader("💡 Skill Development Suggestions")
+            if result["recommendations"]:
+                for item in result["recommendations"]:
+                    with st.expander(item["skill"]):
+                        st.write(item["suggestion"])
+            else:
+                st.success("No additional skills from this checklist to recommend.")
+
+            with st.expander("View All Detected Resume Skills"):
+                if result["skills"]:
+                    st.write(", ".join(result["skills"]))
+                else:
+                    st.write("No predefined skills were detected in the resume text.")
+
+            with st.expander("View Extracted Resume Text"):
+                st.text(text)
+
+        except Exception as exc:
+            st.error("We couldn't analyze this PDF. Please try another text-based PDF resume.")
+            with st.expander("Technical details"):
+                st.code(str(exc))
