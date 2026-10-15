@@ -23,74 +23,91 @@ st.markdown(
     """
     <style>
     :root {
-        --ink: #14213d;
-        --muted: #64748b;
-        --blue: #2563eb;
-        --cyan: #06b6d4;
+        --ink: #172b4d;
+        --muted: #62748e;
+        --blue: #1d4ed8;
+        --blue-dark: #163b78;
         --surface: #ffffff;
-        --line: #e2e8f0;
+        --canvas: #f4f7fb;
+        --line: #dce5f0;
     }
     .stApp {
-        background:
-            radial-gradient(circle at 95% 0%, rgba(37, 99, 235, 0.07), transparent 25rem),
-            #f7f9fd;
+        background: var(--canvas);
+        color: var(--ink);
     }
     [data-testid="stHeader"] {
-        background: rgba(247, 249, 253, 0.88);
+        background: rgba(244, 247, 251, 0.96);
     }
     .block-container {
-        padding-top: 2rem;
+        padding-top: 1.8rem;
         padding-bottom: 3rem;
-        max-width: 1200px;
+        max-width: 1240px;
     }
-    h1, h2, h3 {
-        color: #14213d;
-        letter-spacing: -0.025em;
+    h1, h2, h3, h4 {
+        color: var(--ink);
+        letter-spacing: -0.02em;
     }
     h1 { font-weight: 800; }
     h2, h3 { font-weight: 750; }
     p, label, .stCaption {
-        color: #475569;
+        color: #4b5f7a;
     }
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #101d3a 0%, #172b50 100%);
-        border-right: 1px solid rgba(255,255,255,0.08);
+        background: #173b72;
+        border-right: 1px solid #d6e0ed;
     }
     [data-testid="stSidebar"] * {
-        color: #f8fafc;
-    }
-    [data-testid="stSidebar"] [data-testid="stRadio"] label {
-        border-radius: 10px;
-        padding: 0.35rem 0.45rem;
+        color: #ffffff;
     }
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
         color: #dbeafe;
     }
+    [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+        color: #dbeafe;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] label {
+        border-radius: 10px;
+        padding: 0.45rem 0.55rem;
+        transition: background 0.15s ease;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
+        background: rgba(255,255,255,0.10);
+    }
     [data-testid="stSidebar"] hr {
-        border-color: rgba(255,255,255,0.15);
+        border-color: rgba(255,255,255,0.20);
     }
     div[data-testid="stVerticalBlockBorderWrapper"] {
-        border-radius: 18px;
-        border-color: #e2e8f0;
-        background: rgba(255,255,255,0.88);
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.035);
+        border-radius: 16px;
+        border-color: var(--line);
+        background: #ffffff;
+        box-shadow: 0 4px 16px rgba(23, 43, 77, 0.045);
     }
     div.stButton > button,
-    div[data-testid="stFormSubmitButton"] > button {
-        border-radius: 10px;
+    div[data-testid="stFormSubmitButton"] > button,
+    div[data-testid="stDownloadButton"] > button {
+        border-radius: 9px;
         font-weight: 650;
-        min-height: 2.65rem;
-        transition: all 0.18s ease;
+        min-height: 2.6rem;
+        border-color: #cbd8e8;
+        transition: all 0.16s ease;
     }
     div.stButton > button[kind="primary"],
     div[data-testid="stFormSubmitButton"] > button[kind="primary"] {
-        border: 0;
-        background: linear-gradient(110deg, #2563eb, #0891b2);
-        color: white;
+        border: 1px solid #1d4ed8;
+        background: #1d4ed8;
+        color: #ffffff;
+    }
+    div.stButton > button[kind="primary"]:hover,
+    div[data-testid="stFormSubmitButton"] > button[kind="primary"]:hover {
+        background: #163b78;
+        border-color: #163b78;
+        box-shadow: 0 4px 12px rgba(29, 78, 216, 0.18);
     }
     div.stButton > button:hover,
-    div[data-testid="stFormSubmitButton"] > button:hover {
-        border-color: #2563eb;
+    div[data-testid="stFormSubmitButton"] > button:hover,
+    div[data-testid="stDownloadButton"] > button:hover {
+        border-color: #1d4ed8;
+        color: #1d4ed8;
         transform: translateY(-1px);
     }
     [data-testid="stTextInput"] input,
@@ -98,130 +115,149 @@ st.markdown(
     [data-testid="stNumberInput"] input,
     [data-testid="stDateInput"] input,
     [data-testid="stSelectbox"] [data-baseweb="select"] > div {
-        border-radius: 10px;
+        border-radius: 9px;
+        border-color: #cbd8e8;
     }
     [data-testid="stMetric"] {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 15px;
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: 14px;
         padding: 1rem 1.1rem;
-        box-shadow: 0 5px 18px rgba(15, 23, 42, 0.035);
+        box-shadow: 0 4px 14px rgba(23, 43, 77, 0.035);
+    }
+    [data-testid="stMetricLabel"] {
+        color: #62748e;
+    }
+    [data-testid="stMetricValue"] {
+        color: #173b72;
+        font-weight: 800;
     }
     [data-testid="stTabs"] button {
         font-weight: 650;
     }
+    [data-testid="stProgressBar"] > div > div {
+        background: #1d4ed8;
+    }
     .app-eyebrow {
-        color: #2563eb;
-        font-size: 0.76rem;
+        color: #1d4ed8;
+        font-size: 0.74rem;
         font-weight: 800;
-        letter-spacing: 0.13em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
         margin-bottom: 0.45rem;
     }
     .app-hero {
         padding: 1.7rem 1.8rem;
-        border-radius: 22px;
-        color: white;
-        background: linear-gradient(115deg, #101d3a 0%, #1e40af 58%, #0891b2 100%);
-        box-shadow: 0 16px 38px rgba(30, 64, 175, 0.18);
+        border-radius: 18px;
+        color: #ffffff;
+        background: linear-gradient(115deg, #173b72 0%, #1d4ed8 100%);
+        box-shadow: 0 10px 28px rgba(23, 59, 114, 0.13);
         margin: 0.5rem 0 1.4rem 0;
     }
     .app-hero h2 {
-        color: white;
+        color: #ffffff;
         margin: 0.25rem 0 0.45rem 0;
-        font-size: clamp(1.65rem, 3vw, 2.35rem);
+        font-size: clamp(1.65rem, 3vw, 2.3rem);
     }
     .app-hero p {
-        color: #e0f2fe;
+        color: #eaf2ff;
         margin: 0;
         max-width: 760px;
-        line-height: 1.6;
+        line-height: 1.65;
     }
     .app-hero .hero-tag {
         display: inline-block;
-        color: #e0f2fe;
-        border: 1px solid rgba(255,255,255,0.28);
+        color: #eff6ff;
+        border: 1px solid rgba(255,255,255,0.32);
         border-radius: 999px;
         padding: 0.25rem 0.65rem;
-        font-size: 0.78rem;
+        font-size: 0.76rem;
+        font-weight: 700;
         margin-bottom: 0.35rem;
     }
     .feature-card {
         height: 100%;
-        min-height: 185px;
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 18px;
+        min-height: 190px;
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: 16px;
         padding: 1.25rem;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+        box-shadow: 0 4px 16px rgba(23, 43, 77, 0.045);
+        transition: transform 0.16s ease, box-shadow 0.16s ease;
+    }
+    .feature-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(23, 43, 77, 0.08);
     }
     .feature-card .icon {
         display: inline-flex;
-        width: 2.6rem;
-        height: 2.6rem;
+        width: 2.65rem;
+        height: 2.65rem;
         align-items: center;
         justify-content: center;
-        border-radius: 12px;
-        background: #eff6ff;
+        border-radius: 11px;
+        background: #edf4ff;
+        color: #1d4ed8;
         font-size: 1.35rem;
         margin-bottom: 0.75rem;
     }
     .feature-card h3 {
-        font-size: 1.05rem;
+        font-size: 1.04rem;
         margin: 0 0 0.45rem 0;
-        color: #14213d;
+        color: #173b72;
     }
     .feature-card p {
-        color: #64748b;
-        font-size: 0.92rem;
-        line-height: 1.55;
+        color: #62748e;
+        font-size: 0.91rem;
+        line-height: 1.6;
         margin: 0;
     }
     .section-label {
-        font-size: 0.78rem;
+        font-size: 0.75rem;
         font-weight: 800;
         letter-spacing: 0.1em;
-        color: #64748b;
+        color: #62748e;
         text-transform: uppercase;
         margin: 1.1rem 0 0.7rem 0;
     }
-    /* Refined module headers and chatbot presentation */
     [data-testid="stChatMessage"] {
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
         padding: 0.9rem 1rem;
-        background: rgba(255,255,255,0.92);
-        box-shadow: 0 5px 16px rgba(15, 23, 42, 0.035);
-        margin-bottom: 0.75rem;
+        background: #ffffff;
+        box-shadow: 0 3px 12px rgba(23, 43, 77, 0.035);
+        margin-bottom: 0.7rem;
     }
     [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] p {
-        color: #334155;
+        color: #334b68;
         line-height: 1.7;
     }
     [data-testid="stChatInput"] {
-        border-radius: 16px;
+        border-radius: 14px;
     }
     [data-testid="stChatInput"] textarea {
-        border-radius: 14px;
+        border-radius: 12px;
     }
     [data-testid="stAlert"] {
-        border-radius: 14px;
+        border-radius: 12px;
     }
     [data-testid="stExpander"] {
-        border-radius: 14px;
-        border-color: #e2e8f0;
+        border-radius: 12px;
+        border-color: var(--line);
+        background: #ffffff;
     }
     div[data-testid="stDataFrame"] {
-        border: 1px solid #e2e8f0;
-        border-radius: 14px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
         overflow: hidden;
+        background: #ffffff;
     }
     .module-intro {
-        border: 1px solid #dbeafe;
-        border-radius: 16px;
+        border: 1px solid #d5e4f7;
+        border-radius: 14px;
         padding: 1rem 1.15rem;
-        background: linear-gradient(110deg, #eff6ff 0%, #ecfeff 100%);
-        color: #334155;
+        background: #edf4ff;
+        color: #334b68;
         margin: 0.4rem 0 1rem 0;
         line-height: 1.65;
     }
@@ -229,16 +265,16 @@ st.markdown(
         display: inline-block;
         background: #ffffff;
         color: #1d4ed8;
-        border: 1px solid #bfdbfe;
+        border: 1px solid #c8daf7;
         border-radius: 999px;
         padding: 0.3rem 0.65rem;
-        font-size: 0.78rem;
+        font-size: 0.77rem;
         font-weight: 700;
         margin: 0.15rem 0.2rem 0.15rem 0;
     }
     @media (max-width: 700px) {
         .block-container { padding-top: 1rem; }
-        .app-hero { padding: 1.25rem; border-radius: 16px; }
+        .app-hero { padding: 1.25rem; border-radius: 14px; }
         .feature-card { min-height: auto; }
     }
     </style>
