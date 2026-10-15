@@ -248,105 +248,74 @@ def restore_supabase_session():
 
 
 def get_student_chatbot_response(message: str) -> str:
-    """Return a topic-based response without calling an external AI API."""
+    """Return a useful topic-based response without an external AI API."""
+    import re
+
     text = " ".join((message or "").lower().strip().split())
     if not text:
-        return "Please type a question so I can help. You can ask about Python, DSA, placements, careers, AI/ML, or study planning."
+        return "Please type a question. I can help with Python, DSA, DBMS/SQL, core CS subjects, placements, career paths, AI/ML, resumes, projects, and study techniques."
 
-    rules = [
-        (("hello", "hi", "hey", "good morning", "good evening"),
-         """Hello! 👋 I'm your Student Assistant chatbot. I can help with study planning, Python, DSA, placements, career skills, and AI/ML. What would you like to work on today?"""),
-        (("python", "learn programming", "programming basics", "coding basics"),
-         """🐍 **Python learning path**
+    # Match whole words for short keywords (e.g. "hi") so they do not
+    # accidentally trigger inside unrelated words such as "which".
+    def matches(phrases):
+        for phrase in phrases:
+            phrase = phrase.lower()
+            if " " in phrase:
+                if phrase in text:
+                    return True
+            elif re.search(r"\b" + re.escape(phrase) + r"\b", text):
+                return True
+        return False
 
-1. Learn variables, data types, input/output, and operators.
-2. Practise conditions, loops, and functions.
-3. Learn strings, lists, tuples, sets, and dictionaries.
-4. Practise file handling, exceptions, and basic modules.
-5. Solve small problems daily and then move to DSA.
+    # More specific topics are checked before broader topics such as "career".
+    if matches(["hello", "hi", "hey", "good morning", "good afternoon", "good evening"]):
+        return """Hello! 👋 I'm your Student Assistant. I can guide you through **Python, DSA, DBMS/SQL, core CS subjects, AI/ML, resumes, projects, and placements**.\n\nChoose a topic from the suggestions or ask a specific question to get started."""
 
-**Practice task:** Write a program that counts vowels in a string, then try it with different inputs."""),
-        (("dsa", "data structures", "algorithms", "leetcode", "coding interview"),
-         """💻 **DSA preparation path**
+    if matches(["oops", "object oriented", "object-oriented", "class and object", "inheritance", "polymorphism", "encapsulation", "abstraction"]):
+        return """🧩 **OOP interview revision**\n\nThe four commonly discussed OOP principles are:\n- **Encapsulation:** Keep data and the methods that operate on it together, controlling access where appropriate.\n- **Abstraction:** Expose essential behavior while hiding implementation details.\n- **Inheritance:** Create a class that reuses or extends another class's behavior.\n- **Polymorphism:** Use a common interface with different implementations.\n\n**Practice:** Explain each principle with a small real-world example, then write a short Python class that demonstrates inheritance and method overriding."""
 
-Start with time complexity, arrays, strings, and hashing. Then study linked lists, stacks, queues, binary search, sorting, recursion, trees, heaps, graphs, and dynamic programming.
+    if matches(["python", "learn programming", "programming basics", "coding basics", "python roadmap"]):
+        return """🐍 **Python learning roadmap**\n\n1. **Fundamentals:** variables, data types, input/output, operators, and type conversion.\n2. **Control flow:** conditions, `for` and `while` loops, and functions.\n3. **Collections:** strings, lists, tuples, sets, and dictionaries.\n4. **Problem solving:** counting, searching, sorting, frequency maps, and two-pointer exercises.\n5. **Practical Python:** files, exceptions, modules, and basic object-oriented programming.\n6. **Projects:** build a calculator, quiz app, expense tracker, or simple student record tool.\n\n**Try today:** Write a function that counts vowels in a string. Test empty input, uppercase letters, and strings with no vowels."""
 
-A useful daily routine is 20 minutes of concept revision, 45–60 minutes solving 1–2 problems, and 10 minutes reviewing mistakes. Focus on understanding the approach before memorizing code."""),
-        (("placement", "interview", "job preparation", "campus drive", "aptitude"),
-         """🚀 **Placement preparation plan**
+    if matches(["dsa", "data structures", "algorithms", "leetcode", "coding interview", "time complexity", "big o", "binary search", "linked list", "stack", "queue", "tree", "graph", "dynamic programming"]):
+        return """💻 **DSA preparation roadmap**\n\nStudy these topics in order:\n1. Time and space complexity (Big-O).\n2. Arrays, strings, hashing, and two-pointer patterns.\n3. Searching and sorting, including binary search.\n4. Linked lists, stacks, queues, and recursion.\n5. Trees, heaps, graphs, and traversal algorithms.\n6. Greedy methods and dynamic programming after the basics are strong.\n\n**Daily routine:** 15 minutes revising a concept, 35–45 minutes solving one or two problems, and 10 minutes writing down mistakes. First explain the approach in plain language, then code it and test edge cases."""
 
-- **Technical:** Python fundamentals, OOP, DSA, DBMS, SQL, operating systems, and computer networks.
-- **Aptitude:** percentages, ratios, averages, time and work, logical reasoning, and verbal ability.
-- **Projects:** explain the problem, your contribution, tools used, workflow, limitations, and future improvements.
-- **HR:** prepare a concise introduction, project explanation, strengths, and examples of teamwork.
+    if matches(["sql", "dbms", "database", "normalization", "joins", "primary key", "foreign key", "acid properties", "transaction"]):
+        return """🗄️ **DBMS and SQL revision**\n\n**DBMS topics:** keys and constraints, ER diagrams, normalization (1NF, 2NF, 3NF), transactions, ACID properties, indexing, and concurrency basics.\n\n**SQL practice order:** `SELECT` and `WHERE` → sorting and aggregate functions → `GROUP BY` and `HAVING` → joins → subqueries → views and indexes.\n\n**Practice question:** Given `Students(student_id, name)` and `Marks(student_id, subject, marks)`, write a query to calculate each student's average marks. Think about `JOIN`, `GROUP BY`, and `AVG()` before looking up a solution."""
 
-Practise a few aptitude questions and one coding problem each day, and revise your resume before the drive."""),
-        (("career", "career path", "which field", "job role", "career goal"),
-         """💼 **Choosing a career path**
+    if matches(["operating system", "operating systems", "process", "thread", "deadlock", "cpu scheduling", "memory management"]):
+        return """🖥️ **Operating Systems interview checklist**\n\nReview process vs thread, process states, CPU scheduling, context switching, synchronization, semaphores, deadlocks, paging, virtual memory, and file systems.\n\nFor each topic, prepare: **definition → diagram or example → advantages/limitations → common comparison**. A good first practice question is: *What is the difference between a process and a thread?*"""
 
-- **Software development:** Python or Java, DSA, OOP, Git, APIs, and databases.
-- **Data analytics:** Excel, SQL, statistics, Python, and Power BI/Tableau.
-- **AI/ML:** Python, statistics, linear algebra basics, data preparation, model evaluation, and projects.
-- **Web development:** HTML, CSS, JavaScript, a frontend framework, APIs, and databases.
+    if matches(["computer network", "computer networks", "networking", "osi model", "tcp/ip", "tcp", "udp", "dns", "http", "https", "ip address"]):
+        return """🌐 **Computer Networks revision**\n\nFocus on the OSI and TCP/IP models, IP addressing, subnetting basics, TCP vs UDP, DNS, HTTP vs HTTPS, routing, and common network devices.\n\n**Interview tip:** Practise explaining what happens after entering a website address in a browser: DNS lookup, connection setup, request/response, and rendering. Keep each step clear and in order."""
 
-Choose one target role first, review several job descriptions, identify repeated skills, and build a small project that demonstrates them."""),
-        (("machine learning", " ai/ml", "ai ml", "artificial intelligence", "deep learning", "neural network"),
-         """🤖 **AI/ML learning path**
+    if matches(["aptitude", "quantitative", "logical reasoning", "verbal ability", "percentages", "ratio", "time and work", "placement", "campus drive", "job preparation", "interview preparation", "technical interview"]):
+        return """🚀 **Placement preparation plan**\n\n- **Coding:** Python fundamentals and one or two DSA problems each day.\n- **Core CS:** OOP, DBMS/SQL, operating systems, and computer networks.\n- **Aptitude:** percentages, ratios, averages, time and work, number series, and logical reasoning.\n- **Projects:** explain the problem, architecture, your contribution, testing, limitations, and future scope.\n- **HR:** practise a concise self-introduction, project explanation, strengths, teamwork example, and why you want the role.\n\nCreate a small tracker with topic, practice date, mistakes, and revision date. Prioritize the skills mentioned repeatedly in the job description."""
 
-1. Strengthen Python and core libraries such as NumPy and pandas.
-2. Learn descriptive statistics, probability, and basic linear algebra.
-3. Study supervised learning: linear/logistic regression, decision trees, random forests, and SVM.
-4. Learn model evaluation, overfitting, train/test splits, and data leakage.
-5. Build projects, document your results, and explain limitations.
+    if matches(["hr interview", "tell me about yourself", "self introduction", "strengths and weaknesses", "why should we hire you"]):
+        return """🗣️ **HR interview practice**\n\nUse a simple structure for your introduction:\n1. Your degree and current area of study.\n2. Two or three relevant technical skills.\n3. One or two projects and what you personally implemented.\n4. The type of role you are preparing for.\n\nKeep it around 45–60 seconds and make every claim truthful. For behavioural questions, use **STAR**: Situation, Task, Action, Result. Practise aloud rather than memorizing a long script."""
 
-Start with a small, well-understood dataset before moving to deep learning."""),
-        (("resume", "cv", "skills", "skill gap", "resume analyzer"),
-         """📄 **Improve your resume**
+    if matches(["career", "career path", "which field", "job role", "career goal", "data analyst", "data analytics", "software developer", "web development", "frontend", "backend"]):
+        return """💼 **Career path guide**\n\n- **Software development:** one programming language, DSA, OOP, Git, APIs, and databases.\n- **Data analytics:** Excel, SQL, statistics, Python, data visualization, and Power BI/Tableau.\n- **AI/ML:** Python, statistics, data preparation, model evaluation, and practical projects.\n- **Web development:** HTML, CSS, JavaScript, APIs, and database fundamentals.\n\nPick one target role for the next 6–8 weeks. Compare a few real job descriptions, list recurring skills, and build a project that demonstrates those skills instead of trying to learn every field at once."""
 
-- Tailor the skills and project descriptions to the role you're applying for.
-- Describe projects with the problem, tools, your actions, and measurable results where you can support them.
-- Include only skills you can explain and demonstrate.
-- Keep formatting consistent and proofread carefully.
+    if matches(["machine learning", "ai/ml", "ai ml", "artificial intelligence", "deep learning", "neural network", "supervised learning", "overfitting", "random forest", "svm"]):
+        return """🤖 **AI/ML learning roadmap**\n\n1. Strengthen Python, NumPy, pandas, and data visualization.\n2. Learn probability, descriptive statistics, and basic linear algebra.\n3. Understand supervised learning: linear/logistic regression, decision trees, random forests, and SVM.\n4. Learn train/test splits, cross-validation, suitable metrics, overfitting, and data leakage.\n5. Build small projects, compare baselines, and document limitations.\n6. Move to neural networks and deep learning once the foundations are clear.\n\n**Key principle:** A high score alone is not enough—explain how the data was split, which metric you used, and whether the evaluation could contain leakage."""
 
-You can use the **AI Resume Analyzer** module in this app to compare detected resume skills with a selected role checklist. Its coverage score is a checklist match, not a hiring prediction."""),
-        (("study plan", "study schedule", "timetable", "manage time", "exam preparation", "study"),
-         """📚 **Build a practical study routine**
+    if matches(["resume", "cv", "resume analyzer", "skill gap", "resume skills", "project description"]):
+        return """📄 **Resume improvement checklist**\n\n- Tailor the skills and project bullets to the target role.\n- For each project, describe the problem, tools, what you implemented, and the result you can honestly support.\n- Use clear action verbs and quantify outcomes only when you have evidence.\n- Keep dates, formatting, tense, and headings consistent.\n- Include only skills you can explain in an interview.\n\nYou can use this app's **AI Resume Analyzer** to compare detected skills with a selected career checklist. Its coverage score measures checklist overlap; it is not a hiring prediction."""
 
-1. List subjects, exam dates, and difficult topics.
-2. Prioritize urgent and challenging subjects.
-3. Divide available time into focused blocks of 25–50 minutes, with short breaks.
-4. Reserve time for active recall, practice questions, and revision.
-5. Review progress daily and adjust the next day's plan.
+    if matches(["study plan", "study schedule", "timetable", "manage time", "exam preparation", "how to study", "study tips", "revision", "procrastination"]):
+        return """📚 **Build a realistic study routine**\n\n1. List your subjects, deadlines, and the topics you find difficult.\n2. Start with urgent and challenging topics, but reserve time for every subject.\n3. Study in focused 25–50 minute blocks and take short breaks.\n4. Use active recall: close your notes and explain or solve the concept from memory.\n5. Practise exam-style questions and keep an error log.\n6. Review progress daily and adjust the next day's schedule.\n\nOpen **AI Study Planner** in this app to generate a schedule based on subject deadlines and difficulty."""
 
-Open **AI Study Planner** in this app to generate a deadline- and difficulty-based schedule."""),
-        (("project", "minor project", "github", "streamlit", "portfolio"),
-         """🛠️ **Project development checklist**
+    if matches(["project", "minor project", "github", "streamlit", "portfolio", "debug", "error in code", "deployment"]):
+        return """🛠️ **Project development checklist**\n\n- State the problem and who the app is intended to help.\n- Keep features separated into manageable modules.\n- Test normal inputs, missing inputs, and invalid files.\n- Never commit API keys, passwords, or other secrets to GitHub.\n- Document the architecture, tools, features, limitations, and future scope.\n- For a viva, explain what each module does and what you personally implemented.\n\nFor deployment errors, share the exact error message (without secrets) and identify which file was changed most recently."""
 
-- Define the problem and intended users.
-- Break the app into small modules and test each module.
-- Keep secrets such as API keys and passwords out of GitHub.
-- Document setup, features, limitations, and future scope in the README.
-- Test the deployed app with valid inputs, empty inputs, and error cases.
+    if matches(["thank", "thanks", "thank you"]):
+        return "You're welcome! 😊 Ask me another question about academics, programming, core CS subjects, career planning, resumes, AI/ML, or placements."
 
-For your project explanation, be ready to describe the architecture, technologies, your own contribution, and what you would improve next."""),
-        (("sql", "database", "dbms", "normalization", "joins"),
-         """🗄️ **DBMS and SQL preparation**
-
-Study keys, constraints, ER diagrams, normalization, transactions, ACID properties, indexing, and relational algebra basics. Practise SQL SELECT, WHERE, GROUP BY, HAVING, joins, subqueries, and aggregate functions.
-
-**Practice task:** Given Students and Marks tables, write a query to list each student with their average marks."""),
-        (("thank", "thanks", "thank you"),
-         """You're welcome! 😊 Ask me another question about studies, programming, careers, placements, resumes, or AI/ML whenever you're ready."""),
-    ]
-    for keywords, response in rules:
-        if any(keyword in text for keyword in keywords):
-            return response
-
-    return ("I don't have a tailored response for that topic in my current offline knowledge base yet. "
-            "I can currently help with **Python, DSA, placement preparation, career paths, AI/ML, resumes, "
-            "study planning, projects, and DBMS/SQL**. Try asking a more specific question in one of these areas. "
-            "This version works without an external AI API, so it uses topic-based responses rather than generating "
-            "open-ended answers like a large language model.")
+    return ("I couldn't confidently match that question to one of my prepared topics yet. I work without an external AI API, so I use a topic-based knowledge base rather than generating unrestricted answers.\n\n"
+            "Try asking about **Python, DSA, OOP, DBMS/SQL, Operating Systems, Computer Networks, aptitude, HR interviews, placements, career paths, AI/ML, resumes, study techniques, or projects**.\n\n"
+            "For example: *What is the difference between a process and a thread?* or *Give me a beginner Python roadmap.*")
 
 
 def show_auth_page():
