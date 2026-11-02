@@ -72,3 +72,185 @@ def answer_from_pdf(question, document_text, max_passages=3):
         if len(selected) >= max_passages:
             break
     return {"found": True, "answer": "**Relevant passages from your PDF**\n\n" + "\n\n".join("> " + p for p in selected), "passages": selected}
+    # --------------------------------------------------
+
+# OFFLINE INTERVIEW ANSWER EVALUATION
+
+# --------------------------------------------------
+
+INTERVIEW_KEYWORDS = {
+"What is the difference between a list and a tuple?": [
+"list", "tuple", "mutable", "immutable",
+"change", "modify", "elements"
+],
+"What is a dictionary?": [
+"dictionary", "key", "value", "mapping",
+"hashable", "lookup"
+],
+"What is a generator?": [
+"generator", "yield", "iterator", "lazy",
+"memory", "iteration"
+],
+"How do exceptions work?": [
+"exception", "error", "try", "except",
+"finally", "handling"
+],
+"What is Big-O notation?": [
+"big o", "complexity", "time", "space",
+"input", "growth", "algorithm"
+],
+"When is binary search applicable?": [
+"binary search", "sorted", "ordered",
+"middle", "half", "logarithmic"
+],
+"When would you use a hash map?": [
+"hash map", "key", "lookup", "frequency",
+"search", "average", "constant time"
+],
+"How do you test an algorithm?": [
+"test", "edge cases", "empty", "boundary",
+"duplicates", "complexity", "input"
+],
+"What are ACID properties?": [
+"atomicity", "consistency", "isolation",
+"durability", "transaction"
+],
+"What is normalization?": [
+"normalization", "redundancy", "database",
+"tables", "anomalies", "data"
+],
+"WHERE vs HAVING?": [
+"where", "having", "rows", "groups",
+"filter", "aggregation"
+],
+"What is a primary key?": [
+"primary key", "unique", "identify",
+"row", "null", "record"
+],
+"Process vs thread?": [
+"process", "thread", "memory",
+"address space", "resources", "execution"
+],
+"What is deadlock?": [
+"deadlock", "process", "resource",
+"waiting", "circular wait"
+],
+"What is virtual memory?": [
+"virtual memory", "physical memory",
+"address space", "memory management",
+"paging"
+],
+"Tell me about yourself.": [
+"education", "skills", "project",
+"experience", "career", "goal"
+],
+"Explain your project.": [
+"problem", "objective", "technology",
+"implementation", "architecture",
+"contribution", "result"
+],
+"Describe a challenge you handled.": [
+"situation", "task", "action",
+"result", "challenge", "solution"
+],
+"Why should we hire you?": [
+"skills", "strengths", "role",
+"contribution", "learning", "value"
+],
+}
+
+def evaluate_interview_answer(question, answer):
+"""
+Evaluate an interview answer using keyword coverage,
+answer structure and basic completeness checks.
+
+
+This is a heuristic checklist, not semantic AI grading.
+"""
+
+answer = (answer or "").strip()
+answer_lower = answer.lower()
+
+if not answer:
+    return {
+        "score": 0,
+        "matched_keywords": [],
+        "missing_keywords": INTERVIEW_KEYWORDS.get(question, []),
+        "strengths": [],
+        "improvements": ["Enter an answer before requesting evaluation."],
+        "word_count": 0,
+    }
+
+keywords = INTERVIEW_KEYWORDS.get(question, [])
+
+matched = [
+    keyword for keyword in keywords
+    if keyword.lower() in answer_lower
+]
+
+missing = [
+    keyword for keyword in keywords
+    if keyword.lower() not in answer_lower
+]
+
+word_count = len(answer.split())
+
+keyword_score = (
+    len(matched) / len(keywords) * 70
+    if keywords else 0
+)
+
+length_score = min(word_count / 80, 1) * 20
+
+structure_score = (
+    10 if any(
+        marker in answer_lower
+        for marker in ["for example", "such as", "because", "therefore"]
+    ) else 0
+)
+
+score = min(
+    100,
+    round(keyword_score + length_score + structure_score)
+)
+
+strengths = []
+improvements = []
+
+if matched:
+    strengths.append(
+        f"You covered {len(matched)} of {len(keywords)} expected concepts."
+    )
+
+if word_count >= 40:
+    strengths.append("Your answer has a reasonable level of detail.")
+elif word_count >= 20:
+    strengths.append("Your answer provides a basic explanation.")
+else:
+    improvements.append("Expand your answer with more explanation.")
+
+if structure_score:
+    strengths.append("You included an explanation or example connector.")
+else:
+    improvements.append("Add a relevant example where appropriate.")
+
+if missing:
+    improvements.append(
+        "Consider covering: " + ", ".join(missing[:5]) + "."
+    )
+
+if score >= 80:
+    improvements.append("Review technical accuracy and keep your answer concise.")
+elif score >= 50:
+    improvements.append("Strengthen the missing concepts before your next attempt.")
+else:
+    improvements.append("Revise the fundamental concepts and try answering again.")
+
+return {
+    "score": score,
+    "matched_keywords": matched,
+    "missing_keywords": missing,
+    "strengths": strengths,
+    "improvements": improvements,
+    "word_count": word_count,
+}
