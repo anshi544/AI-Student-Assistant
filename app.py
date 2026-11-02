@@ -563,13 +563,13 @@ with st.sidebar:
     module = st.radio(
 "Navigation",
 [
+"👤 My Profile",
 "🏠 Dashboard",
 "📚 AI Study Planner",
 "📄 AI Resume Analyzer",
 "📑 PDF Study Assistant",
 "💼 Career & Interview Coach",
 "🤖 Student Chatbot",
-"👤 My Profile",
 ],
 )
 
@@ -588,83 +588,156 @@ with st.sidebar:
 
 
 # ==================================================
+
 # DASHBOARD
+
 # ==================================================
+
 if module == "🏠 Dashboard":
-    student_name = escape((profile.get("full_name") or "").strip().split(" ")[0] or "Student")
-    st.markdown(
-        f"""
-        <div class="app-hero">
-            <span class="hero-tag">YOUR PERSONAL LEARNING SPACE</span>
-            <h2>Welcome back, {student_name}! 👋</h2>
-            <p>Build better study habits, understand your skills, and take the next step
-            toward your academic and career goals.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
+student_name = escape(
+(profile.get("full_name") or "").strip().split(" ")[0] or "Student"
+)
+
+```
+# 1. Welcome section
+st.markdown(
+    f"""
+    <div class="app-hero">
+        <span class="hero-tag">YOUR PERSONAL LEARNING SPACE</span>
+        <h2>Welcome back, {student_name}! 👋</h2>
+        <p>Build better study habits, understand your skills, and take the next step
+        toward your academic and career goals.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# 2. Quick Overview
+st.markdown(
+    '<div class="section-label">QUICK OVERVIEW</div>',
+    unsafe_allow_html=True,
+)
+
+metric1, metric2, metric3 = st.columns(3)
+
+with metric1:
+    st.metric(
+        "Learning Tools",
+        "05",
+        help="Study Planner, Resume Analyzer, PDF Assistant, Career Coach and Chatbot",
     )
 
-    st.markdown('<div class="section-label">YOUR WORKSPACE</div>', unsafe_allow_html=True)
-    card1, card2, card3, card4 = st.columns(4)
-    with card1:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <div class="icon">📚</div>
-                <h3>AI Study Planner</h3>
-                <p>Organize subjects by deadlines and difficulty, then generate a study plan
-                around the time you have available.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with card2:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <div class="icon">📄</div>
-                <h3>AI Resume Analyzer</h3>
-                <p>Review detected skills, explore skill coverage, and identify areas to
-                consider developing for your career goals.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with card3:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <div class="icon">👤</div>
-                <h3>Student Profile</h3>
-                <p>Keep your name, course, and current study year up to date in your
-                personal student workspace.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with card4:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <div class="icon">🤖</div>
-                <h3>Student Chatbot</h3>
-                <p>Get instant topic-based guidance for programming, placements, careers,
-                AI/ML, and study habits—without an API key.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+with metric2:
+    st.metric(
+        "Account Status",
+        "Logged In",
+        help="You are signed in to your student workspace.",
+    )
 
-    st.markdown('<div class="section-label">QUICK OVERVIEW</div>', unsafe_allow_html=True)
-    metric1, metric2, metric3 = st.columns(3)
-    with metric1:
-        st.metric("Learning tools", "02", help="Study Planner and Resume Analyzer")
-    with metric2:
-        st.metric("Account status", "Verified login", help="You are signed in to your workspace")
-    with metric3:
-        st.metric("Profile", "Personalized", help="Update your details from My Profile")
+with metric3:
+    profile_status = (
+        "Complete"
+        if profile.get("full_name") and profile.get("course")
+        else "Incomplete"
+    )
+    st.metric(
+        "Student Profile",
+        profile_status,
+        help="Manage your personal details from My Profile.",
+    )
 
-    st.info("Choose a module from the sidebar to get started. Your existing tools are ready to use.")
+st.divider()
+
+# 3. Quick Access
+st.markdown(
+    '<div class="section-label">QUICK ACCESS — YOUR WORKSPACE</div>',
+    unsafe_allow_html=True,
+)
+
+feature_data = [
+    (
+        "📚",
+        "AI Study Planner",
+        "Create daily priorities and weekly study timetables.",
+    ),
+    (
+        "📄",
+        "AI Resume Analyzer",
+        "Identify resume skills and explore career skill gaps.",
+    ),
+    (
+        "📑",
+        "PDF Study Assistant",
+        "Upload study notes and retrieve relevant passages.",
+    ),
+    (
+        "💼",
+        "Career & Interview Coach",
+        "Explore career roadmaps and practise interview questions.",
+    ),
+    (
+        "🤖",
+        "Student Chatbot",
+        "Get topic-based academic and career guidance.",
+    ),
+    (
+        "👤",
+        "My Profile",
+        "View and update your student information.",
+    ),
+]
+
+for start in range(0, len(feature_data), 3):
+    columns = st.columns(3)
+
+    for column, item in zip(columns, feature_data[start:start + 3]):
+        icon, title, description = item
+
+        with column:
+            st.markdown(
+                f"""
+                <div class="feature-card">
+                    <div class="icon">{icon}</div>
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+st.divider()
+
+# 4. Career and Learning Recommendations
+st.markdown(
+    '<div class="section-label">CAREER & LEARNING RECOMMENDATIONS</div>',
+    unsafe_allow_html=True,
+)
+
+recommendation_col1, recommendation_col2 = st.columns(2)
+
+with recommendation_col1:
+    st.markdown("### 🎯 Academic Growth")
+    st.markdown(
+        "- Set realistic daily study targets.\n"
+        "- Prioritize difficult subjects and upcoming deadlines.\n"
+        "- Use active recall and regular revision.\n"
+        "- Track your progress through the Study Planner."
+    )
+
+with recommendation_col2:
+    st.markdown("### 🚀 Career Readiness")
+    st.markdown(
+        "- Strengthen Python and problem-solving skills.\n"
+        "- Practise DSA and core computer science subjects.\n"
+        "- Build projects and document them on GitHub.\n"
+        "- Review your resume against your target role."
+    )
+
+st.info(
+    "Select any module from the sidebar to begin. "
+    "Your academic planning and career tools are ready to use."
+)
+```
 
 
 # ==================================================
