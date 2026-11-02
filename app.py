@@ -561,17 +561,18 @@ with st.sidebar:
     st.write(f"**Signed in as**")
     st.caption(user_email)
     module = st.radio(
-        "Navigation",
-        [
-            "🏠 Dashboard",
-            "👤 My Profile",
-            "📚 AI Study Planner",
-            "📄 AI Resume Analyzer",
-            "🤖 Student Chatbot",
-            "📑 PDF Study Assistant",
-            "💼 Career & Interview Coach",
-        ],
-    )
+"Navigation",
+[
+"🏠 Dashboard",
+"📚 AI Study Planner",
+"📄 AI Resume Analyzer",
+"📑 PDF Study Assistant",
+"💼 Career & Interview Coach",
+"🤖 Student Chatbot",
+"👤 My Profile",
+],
+)
+
     if st.button("Log out", use_container_width=True):
         try:
             supabase.auth.sign_out()
