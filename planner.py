@@ -382,11 +382,11 @@ def get_study_recommendations(subjects):
     )
 
     return recommendations
-    def generate_smart_insights(subjects, daily_hours):
+def generate_smart_insights(subjects, daily_hours):
 """Generate deadline alerts, workload analysis and completion forecasts."""
 from datetime import date
 
-```
+
 insights = []
 total_required_daily_hours = 0
 
@@ -432,9 +432,7 @@ for subject in subjects:
     # Progress status
     if remaining_topics == 0:
         status = "Completed"
-    elif days_left < 0 or (
-        days_left <= 3 and remaining_topics > 0
-    ):
+    elif days_left < 0 or days_left <= 3:
         status = "Critical"
     elif required_daily_hours > daily_hours:
         status = "Needs Attention"
@@ -464,4 +462,4 @@ return {
     "daily_hours_available": daily_hours,
     "workload_status": workload_status
 }
-```
+
