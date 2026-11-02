@@ -806,32 +806,98 @@ elif module == "📚 AI Study Planner":
         key="planner_subject_count",
     )
 
-    subjects = []
+        subjects = []
+
     for i in range(int(number_of_subjects)):
         with st.container(border=True):
-            st.markdown(f"**Subject {i + 1}**")
-            col1, col2, col3 = st.columns([1.4, 1, 1])
+            st.markdown(f"### 📘 Subject {i + 1}")
+
+            col1, col2 = st.columns(2)
+
             with col1:
-                name = st.text_input("Subject name", key=f"name_{i}")
-            with col2:
+                name = st.text_input(
+                    "Subject name",
+                    key=f"name_{i}",
+                    placeholder="e.g. Mathematics"
+                )
+
                 deadline = st.date_input(
-                    "Deadline", value=date.today(), key=f"deadline_{i}"
+                    "Exam / Submission Date",
+                    value=date.today(),
+                    key=f"deadline_{i}",
                 )
-            with col3:
+
                 difficulty = st.selectbox(
-                    "Difficulty", ["Easy", "Medium", "Hard"], key=f"difficulty_{i}"
+                    "Difficulty",
+                    ["Easy", "Medium", "Hard"],
+                    key=f"difficulty_{i}",
                 )
+
+            with col2:
+                total_topics = st.number_input(
+                    "Total topics",
+                    min_value=1,
+                    max_value=100,
+                    value=10,
+                    step=1,
+                    key=f"total_topics_{i}",
+                )
+
+                completed_topics = st.number_input(
+                    "Completed topics",
+                    min_value=0,
+                    max_value=100,
+                    value=0,
+                    step=1,
+                    key=f"completed_topics_{i}",
+                )
+
+                estimated_hours = st.number_input(
+                    "Estimated preparation hours",
+                    min_value=1.0,
+                    max_value=300.0,
+                    value=10.0,
+                    step=1.0,
+                    key=f"estimated_hours_{i}",
+                )
+
+            if completed_topics > total_topics:
+                st.warning("Completed topics cannot exceed total topics.")
+
+            else:
+                remaining_topics = int(total_topics - completed_topics)
+
+                progress = completed_topics / total_topics
+
+                st.progress(
+                    progress,
+                    text=f"Topic completion: {progress * 100:.0f}%"
+                )
+
             subjects.append({
                 "name": name.strip(),
                 "deadline": deadline,
                 "difficulty": difficulty,
+                "total_topics": int(total_topics),
+                "completed_topics": int(completed_topics),
+                "remaining_topics": max(
+                    0, int(total_topics - completed_topics)
+                ),
+                "estimated_hours": float(estimated_hours),
             })
 
     if st.button("🚀 Generate Study Schedule", type="primary", use_container_width=True):
-        valid_subjects = [subject for subject in subjects if subject["name"]]
+        valid_subjects = [
+    subject for subject in subjects
+    if subject["name"]
+    and subject["completed_topics"] <= subject["total_topics"]
+]
         if not valid_subjects:
-            st.warning("Please enter at least one subject name.")
-            st.session_state.pop("study_plan_results", None)
+    st.warning(
+        "Please enter at least one valid subject. "
+        "Check that completed topics do not exceed total topics."
+    )
+    st.session_state.pop("study_plan_results", None)
         else:
             try:
                 st.session_state.study_plan_results = {
