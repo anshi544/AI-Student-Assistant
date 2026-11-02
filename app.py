@@ -806,7 +806,7 @@ elif module == "📚 AI Study Planner":
         key="planner_subject_count",
     )
 
-        subjects = []
+    subjects = []
 
     for i in range(int(number_of_subjects)):
         with st.container(border=True):
