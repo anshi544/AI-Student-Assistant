@@ -5,6 +5,7 @@ from supabase import create_client, Client
 
 from planner import generate_plan, generate_weekly_plan, get_study_recommendations
 from resume_analyzer import extract_text_from_pdf, analyze_resume, CAREER_SKILLS
+from offline_assistant import answer_from_pdf, CAREER_ROADMAPS, INTERVIEW_BANK
 
 
 # --------------------------------------------------
@@ -23,91 +24,74 @@ st.markdown(
     """
     <style>
     :root {
-        --ink: #172b4d;
-        --muted: #62748e;
-        --blue: #1d4ed8;
-        --blue-dark: #163b78;
+        --ink: #14213d;
+        --muted: #64748b;
+        --blue: #2563eb;
+        --cyan: #06b6d4;
         --surface: #ffffff;
-        --canvas: #f4f7fb;
-        --line: #dce5f0;
+        --line: #e2e8f0;
     }
     .stApp {
-        background: var(--canvas);
-        color: var(--ink);
+        background:
+            radial-gradient(circle at 95% 0%, rgba(37, 99, 235, 0.07), transparent 25rem),
+            #f7f9fd;
     }
     [data-testid="stHeader"] {
-        background: rgba(244, 247, 251, 0.96);
+        background: rgba(247, 249, 253, 0.88);
     }
     .block-container {
-        padding-top: 1.8rem;
+        padding-top: 2rem;
         padding-bottom: 3rem;
-        max-width: 1240px;
+        max-width: 1200px;
     }
-    h1, h2, h3, h4 {
-        color: var(--ink);
-        letter-spacing: -0.02em;
+    h1, h2, h3 {
+        color: #14213d;
+        letter-spacing: -0.025em;
     }
     h1 { font-weight: 800; }
     h2, h3 { font-weight: 750; }
     p, label, .stCaption {
-        color: #4b5f7a;
+        color: #475569;
     }
     [data-testid="stSidebar"] {
-        background: #173b72;
-        border-right: 1px solid #d6e0ed;
+        background: linear-gradient(180deg, #101d3a 0%, #172b50 100%);
+        border-right: 1px solid rgba(255,255,255,0.08);
     }
     [data-testid="stSidebar"] * {
-        color: #ffffff;
+        color: #f8fafc;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] label {
+        border-radius: 10px;
+        padding: 0.35rem 0.45rem;
     }
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
         color: #dbeafe;
     }
-    [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
-        color: #dbeafe;
-    }
-    [data-testid="stSidebar"] [data-testid="stRadio"] label {
-        border-radius: 10px;
-        padding: 0.45rem 0.55rem;
-        transition: background 0.15s ease;
-    }
-    [data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
-        background: rgba(255,255,255,0.10);
-    }
     [data-testid="stSidebar"] hr {
-        border-color: rgba(255,255,255,0.20);
+        border-color: rgba(255,255,255,0.15);
     }
     div[data-testid="stVerticalBlockBorderWrapper"] {
-        border-radius: 16px;
-        border-color: var(--line);
-        background: #ffffff;
-        box-shadow: 0 4px 16px rgba(23, 43, 77, 0.045);
+        border-radius: 18px;
+        border-color: #e2e8f0;
+        background: rgba(255,255,255,0.88);
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.035);
     }
     div.stButton > button,
-    div[data-testid="stFormSubmitButton"] > button,
-    div[data-testid="stDownloadButton"] > button {
-        border-radius: 9px;
+    div[data-testid="stFormSubmitButton"] > button {
+        border-radius: 10px;
         font-weight: 650;
-        min-height: 2.6rem;
-        border-color: #cbd8e8;
-        transition: all 0.16s ease;
+        min-height: 2.65rem;
+        transition: all 0.18s ease;
     }
     div.stButton > button[kind="primary"],
     div[data-testid="stFormSubmitButton"] > button[kind="primary"] {
-        border: 1px solid #1d4ed8;
-        background: #1d4ed8;
-        color: #ffffff;
-    }
-    div.stButton > button[kind="primary"]:hover,
-    div[data-testid="stFormSubmitButton"] > button[kind="primary"]:hover {
-        background: #163b78;
-        border-color: #163b78;
-        box-shadow: 0 4px 12px rgba(29, 78, 216, 0.18);
+        border: 0;
+        background: linear-gradient(110deg, #2563eb, #0891b2);
+        color: white;
     }
     div.stButton > button:hover,
-    div[data-testid="stFormSubmitButton"] > button:hover,
-    div[data-testid="stDownloadButton"] > button:hover {
-        border-color: #1d4ed8;
-        color: #1d4ed8;
+    div[data-testid="stFormSubmitButton"] > button:hover {
+        border-color: #2563eb;
         transform: translateY(-1px);
     }
     [data-testid="stTextInput"] input,
@@ -115,149 +99,130 @@ st.markdown(
     [data-testid="stNumberInput"] input,
     [data-testid="stDateInput"] input,
     [data-testid="stSelectbox"] [data-baseweb="select"] > div {
-        border-radius: 9px;
-        border-color: #cbd8e8;
+        border-radius: 10px;
     }
     [data-testid="stMetric"] {
-        background: #ffffff;
-        border: 1px solid var(--line);
-        border-radius: 14px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 15px;
         padding: 1rem 1.1rem;
-        box-shadow: 0 4px 14px rgba(23, 43, 77, 0.035);
-    }
-    [data-testid="stMetricLabel"] {
-        color: #62748e;
-    }
-    [data-testid="stMetricValue"] {
-        color: #173b72;
-        font-weight: 800;
+        box-shadow: 0 5px 18px rgba(15, 23, 42, 0.035);
     }
     [data-testid="stTabs"] button {
         font-weight: 650;
     }
-    [data-testid="stProgressBar"] > div > div {
-        background: #1d4ed8;
-    }
     .app-eyebrow {
-        color: #1d4ed8;
-        font-size: 0.74rem;
+        color: #2563eb;
+        font-size: 0.76rem;
         font-weight: 800;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.13em;
         text-transform: uppercase;
         margin-bottom: 0.45rem;
     }
     .app-hero {
         padding: 1.7rem 1.8rem;
-        border-radius: 18px;
-        color: #ffffff;
-        background: linear-gradient(115deg, #173b72 0%, #1d4ed8 100%);
-        box-shadow: 0 10px 28px rgba(23, 59, 114, 0.13);
+        border-radius: 22px;
+        color: white;
+        background: linear-gradient(115deg, #101d3a 0%, #1e40af 58%, #0891b2 100%);
+        box-shadow: 0 16px 38px rgba(30, 64, 175, 0.18);
         margin: 0.5rem 0 1.4rem 0;
     }
     .app-hero h2 {
-        color: #ffffff;
+        color: white;
         margin: 0.25rem 0 0.45rem 0;
-        font-size: clamp(1.65rem, 3vw, 2.3rem);
+        font-size: clamp(1.65rem, 3vw, 2.35rem);
     }
     .app-hero p {
-        color: #eaf2ff;
+        color: #e0f2fe;
         margin: 0;
         max-width: 760px;
-        line-height: 1.65;
+        line-height: 1.6;
     }
     .app-hero .hero-tag {
         display: inline-block;
-        color: #eff6ff;
-        border: 1px solid rgba(255,255,255,0.32);
+        color: #e0f2fe;
+        border: 1px solid rgba(255,255,255,0.28);
         border-radius: 999px;
         padding: 0.25rem 0.65rem;
-        font-size: 0.76rem;
-        font-weight: 700;
+        font-size: 0.78rem;
         margin-bottom: 0.35rem;
     }
     .feature-card {
         height: 100%;
-        min-height: 190px;
-        background: #ffffff;
-        border: 1px solid var(--line);
-        border-radius: 16px;
+        min-height: 185px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
         padding: 1.25rem;
-        box-shadow: 0 4px 16px rgba(23, 43, 77, 0.045);
-        transition: transform 0.16s ease, box-shadow 0.16s ease;
-    }
-    .feature-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 22px rgba(23, 43, 77, 0.08);
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
     }
     .feature-card .icon {
         display: inline-flex;
-        width: 2.65rem;
-        height: 2.65rem;
+        width: 2.6rem;
+        height: 2.6rem;
         align-items: center;
         justify-content: center;
-        border-radius: 11px;
-        background: #edf4ff;
-        color: #1d4ed8;
+        border-radius: 12px;
+        background: #eff6ff;
         font-size: 1.35rem;
         margin-bottom: 0.75rem;
     }
     .feature-card h3 {
-        font-size: 1.04rem;
+        font-size: 1.05rem;
         margin: 0 0 0.45rem 0;
-        color: #173b72;
+        color: #14213d;
     }
     .feature-card p {
-        color: #62748e;
-        font-size: 0.91rem;
-        line-height: 1.6;
+        color: #64748b;
+        font-size: 0.92rem;
+        line-height: 1.55;
         margin: 0;
     }
     .section-label {
-        font-size: 0.75rem;
+        font-size: 0.78rem;
         font-weight: 800;
         letter-spacing: 0.1em;
-        color: #62748e;
+        color: #64748b;
         text-transform: uppercase;
         margin: 1.1rem 0 0.7rem 0;
     }
+    /* Refined module headers and chatbot presentation */
     [data-testid="stChatMessage"] {
-        border: 1px solid var(--line);
-        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
         padding: 0.9rem 1rem;
-        background: #ffffff;
-        box-shadow: 0 3px 12px rgba(23, 43, 77, 0.035);
-        margin-bottom: 0.7rem;
+        background: rgba(255,255,255,0.92);
+        box-shadow: 0 5px 16px rgba(15, 23, 42, 0.035);
+        margin-bottom: 0.75rem;
     }
     [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] p {
-        color: #334b68;
+        color: #334155;
         line-height: 1.7;
     }
     [data-testid="stChatInput"] {
-        border-radius: 14px;
+        border-radius: 16px;
     }
     [data-testid="stChatInput"] textarea {
-        border-radius: 12px;
+        border-radius: 14px;
     }
     [data-testid="stAlert"] {
-        border-radius: 12px;
+        border-radius: 14px;
     }
     [data-testid="stExpander"] {
-        border-radius: 12px;
-        border-color: var(--line);
-        background: #ffffff;
+        border-radius: 14px;
+        border-color: #e2e8f0;
     }
     div[data-testid="stDataFrame"] {
-        border: 1px solid var(--line);
-        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
         overflow: hidden;
-        background: #ffffff;
     }
     .module-intro {
-        border: 1px solid #d5e4f7;
-        border-radius: 14px;
+        border: 1px solid #dbeafe;
+        border-radius: 16px;
         padding: 1rem 1.15rem;
-        background: #edf4ff;
-        color: #334b68;
+        background: linear-gradient(110deg, #eff6ff 0%, #ecfeff 100%);
+        color: #334155;
         margin: 0.4rem 0 1rem 0;
         line-height: 1.65;
     }
@@ -265,16 +230,16 @@ st.markdown(
         display: inline-block;
         background: #ffffff;
         color: #1d4ed8;
-        border: 1px solid #c8daf7;
+        border: 1px solid #bfdbfe;
         border-radius: 999px;
         padding: 0.3rem 0.65rem;
-        font-size: 0.77rem;
+        font-size: 0.78rem;
         font-weight: 700;
         margin: 0.15rem 0.2rem 0.15rem 0;
     }
     @media (max-width: 700px) {
         .block-container { padding-top: 1rem; }
-        .app-hero { padding: 1.25rem; border-radius: 14px; }
+        .app-hero { padding: 1.25rem; border-radius: 16px; }
         .feature-card { min-height: auto; }
     }
     </style>
@@ -603,6 +568,8 @@ with st.sidebar:
             "📚 AI Study Planner",
             "📄 AI Resume Analyzer",
             "🤖 Student Chatbot",
+            "📑 PDF Study Assistant",
+            "💼 Career & Interview Coach",
         ],
     )
     if st.button("Log out", use_container_width=True):
@@ -992,68 +959,139 @@ elif module == "📄 AI Resume Analyzer":
 
 
 # ==================================================
+# PDF STUDY ASSISTANT (API-FREE RETRIEVAL)
+# ==================================================
+elif module == "📑 PDF Study Assistant":
+    st.markdown('<div class="app-eyebrow">LEARN FROM YOUR OWN NOTES</div>', unsafe_allow_html=True)
+    st.header("📑 PDF Study Assistant")
+    st.write("Upload text-based lecture notes or a textbook chapter, then ask questions. Answers are retrieved from relevant passages, not generated by a large language model.")
+    study_pdf = st.file_uploader("Upload study PDF", type=["pdf"], key="study_pdf_upload")
+    if study_pdf is not None:
+        try:
+            pdf_text = extract_text_from_pdf(study_pdf)
+            if not pdf_text.strip():
+                st.warning("No selectable text was extracted. If this PDF contains scanned pages, OCR is needed first.")
+            else:
+                st.success(f"PDF ready: {len(pdf_text.split())} words extracted.")
+                with st.expander("Preview extracted text"):
+                    st.text(pdf_text[:5000] + ("…" if len(pdf_text) > 5000 else ""))
+                pdf_question = st.text_input("Ask a question about this PDF", placeholder="Example: Explain the key properties described in the notes", key="pdf_study_question")
+                if st.button("Find answer in PDF", type="primary", key="pdf_study_ask") and pdf_question.strip():
+                    result = answer_from_pdf(pdf_question, pdf_text)
+                    if result["found"]:
+                        st.markdown(result["answer"])
+                        st.caption("Method: keyword-based passage retrieval. Verify the passages against the original document.")
+                    else:
+                        st.info(result["answer"])
+                st.download_button("Download extracted text (.txt)", data=pdf_text, file_name="study_notes_extracted.txt", mime="text/plain")
+        except Exception as exc:
+            st.error("Could not read this PDF. Please try a valid, text-based PDF.")
+            with st.expander("Technical details"):
+                st.code(str(exc))
+
+# ==================================================
+# CAREER MENTOR & INTERVIEW COACH (API-FREE)
+# ==================================================
+elif module == "💼 Career & Interview Coach":
+    st.markdown('<div class="app-eyebrow">TURN LEARNING INTO CAREER READINESS</div>', unsafe_allow_html=True)
+    st.header("💼 Career & Interview Coach")
+    career_tab, interview_tab, prep_tab = st.tabs(["Career Roadmap", "Interview Practice", "Mock Interview"])
+    with career_tab:
+        role = st.selectbox("Choose a target role", list(CAREER_ROADMAPS.keys()), key="career_roadmap_role")
+        st.write(f"### {role}: 5-step roadmap")
+        for idx, item in enumerate(CAREER_ROADMAPS[role], start=1):
+            st.markdown(f"**Step {idx}.** {item}")
+        st.info("Use this as a flexible roadmap, not a guarantee of employment. Compare it with current job descriptions and adjust to your available time.")
+        roadmap_text = "\n".join(f"{i}. {item}" for i, item in enumerate(CAREER_ROADMAPS[role], start=1))
+        st.download_button("Download roadmap (.txt)", roadmap_text, file_name=f"{role.lower().replace('/', '-')}_roadmap.txt", mime="text/plain")
+    with interview_tab:
+        topic = st.selectbox("Interview topic", list(INTERVIEW_BANK.keys()), key="interview_topic")
+        for idx, (question, answer) in enumerate(INTERVIEW_BANK[topic], start=1):
+            with st.expander(f"{idx}. {question}"):
+                st.write(answer)
+                st.caption("Practice tip: answer aloud first, then compare your response with this outline.")
+    with prep_tab:
+        st.write("Answer the question in your own words. The app provides a checklist for self-review; it does not use an AI model to grade your answer.")
+        mock_question = st.selectbox("Practice question", [q for bank in INTERVIEW_BANK.values() for q, _ in bank], key="mock_interview_question")
+        mock_answer = st.text_area("Your answer", height=180, placeholder="Type your response here…", key="mock_interview_answer")
+        if st.button("Review my answer checklist", type="primary", key="review_mock_answer"):
+            if len(mock_answer.strip().split()) < 20:
+                st.warning("Try expanding your answer to at least 20 words, with a definition or clear point and a concrete example where appropriate.")
+            else:
+                st.success("Answer captured. Use the checklist below to review it.")
+            st.markdown("**Self-review checklist**")
+            st.checkbox("I answered the question directly", key="mock_check_direct")
+            st.checkbox("I included an accurate explanation or example", key="mock_check_example")
+            st.checkbox("I explained trade-offs or edge cases when relevant", key="mock_check_tradeoffs")
+            st.checkbox("I kept the answer structured and concise", key="mock_check_structure")
+            st.caption("No automated semantic grading is performed in this API-free version.")
+
+# ==================================================
 # STUDENT CHATBOT (OFFLINE RULE-BASED; NO API KEY)
 # ==================================================
 elif module == "🤖 Student Chatbot":
     st.markdown('<div class="app-eyebrow">YOUR STUDY & CAREER COMPANION</div>', unsafe_allow_html=True)
     st.header("🤖 Student Chatbot")
-    st.markdown(
-        """
-        <div class="module-intro">
-            Your study and career companion for quick, practical guidance. Choose a suggested prompt
-            or type a question about one of the supported student topics.
-            <div style="margin-top:0.55rem">
-                <span class="topic-pill">🐍 Python & DSA</span>
-                <span class="topic-pill">🗄️ DBMS & SQL</span>
-                <span class="topic-pill">🎯 Placements</span>
-                <span class="topic-pill">🤖 AI/ML</span>
-                <span class="topic-pill">💼 Careers</span>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown("Ask about Python, DSA, DBMS/SQL, core CS, AI/ML, resumes, study habits, placements or projects. This version uses a curated offline knowledge base rather than unrestricted generative AI.")
     with st.expander("About this chatbot", expanded=False):
-        st.write(
-            "This is an API-free, rule-based assistant. It matches your question to supported topics "
-            "and returns prepared guidance. It does not generate answers like a large language model, "
-            "so questions outside its knowledge patterns may receive a general fallback response."
-        )
+        st.write("This chatbot uses topic matching and prepared guidance without an external API. Conversation history can be stored in Supabase after the optional chat-history table is created.")
 
-    if "student_chat_history" not in st.session_state:
-        st.session_state.student_chat_history = [
-            {"role": "assistant", "content": "Hi! 👋 I'm your Student Assistant. What would you like help with today? Try asking about Python, DSA, placements, career options, AI/ML, resumes, or study planning."}
+    history_key = f"student_chat_history_{user_id}"
+    if history_key not in st.session_state:
+        loaded_history = []
+        try:
+            history_result = (supabase.table("assistant_chat_messages")
+                .select("role, content")
+                .eq("user_id", user_id)
+                .order("created_at")
+                .limit(100)
+                .execute())
+            loaded_history = history_result.data or []
+        except Exception:
+            # The app continues to work if the optional history table has not been created.
+            pass
+        st.session_state[history_key] = loaded_history or [
+            {"role": "assistant", "content": "Hi! 👋 I'm your Student Assistant. Ask me about Python, DSA, placements, career options, AI/ML, resumes, projects, or study planning."}
         ]
 
-    st.markdown("#### 💡 Try a suggested question")
-    suggested_questions = [
-        "How do I start learning Python?",
-        "Give me a placement preparation plan",
-        "How should I prepare DSA?",
-        "Explain the AI/ML learning path",
-    ]
+    def add_chat_message(role, content):
+        st.session_state[history_key].append({"role": role, "content": content})
+        try:
+            supabase.table("assistant_chat_messages").insert({
+                "user_id": user_id,
+                "role": role,
+                "content": content,
+            }).execute()
+        except Exception:
+            # Session history still works when database persistence is not configured.
+            pass
+
+    st.markdown("#### 💡 Suggested questions")
+    suggested_questions = ["How do I start learning Python?", "Give me a placement preparation plan", "How should I prepare DSA?", "Explain the AI/ML learning path"]
     suggestion_cols = st.columns(2)
     for index, question in enumerate(suggested_questions):
         with suggestion_cols[index % 2]:
             if st.button(question, key=f"chat_suggestion_{index}", use_container_width=True):
-                st.session_state.student_chat_history.append({"role": "user", "content": question})
-                st.session_state.student_chat_history.append({"role": "assistant", "content": get_student_chatbot_response(question)})
+                add_chat_message("user", question)
+                add_chat_message("assistant", get_student_chatbot_response(question))
                 st.rerun()
 
     st.divider()
-    for message in st.session_state.student_chat_history:
+    for message in st.session_state[history_key][-100:]:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
     user_prompt = st.chat_input("Ask a study or career question...")
     if user_prompt:
-        st.session_state.student_chat_history.append({"role": "user", "content": user_prompt})
+        add_chat_message("user", user_prompt)
         reply = get_student_chatbot_response(user_prompt)
-        st.session_state.student_chat_history.append({"role": "assistant", "content": reply})
+        add_chat_message("assistant", reply)
         st.rerun()
 
     if st.button("🧹 Clear chat history", key="clear_student_chat"):
-        st.session_state.student_chat_history = [
-            {"role": "assistant", "content": "Chat cleared. 👋 Ask me about Python, DSA, placements, careers, AI/ML, resumes, projects, or study planning."}
-        ]
+        st.session_state[history_key] = [{"role": "assistant", "content": "Chat cleared. 👋 Ask me about Python, DSA, placements, careers, AI/ML, resumes, projects, or study planning."}]
+        try:
+            supabase.table("assistant_chat_messages").delete().eq("user_id", user_id).execute()
+        except Exception:
+            pass
         st.rerun()
