@@ -893,11 +893,11 @@ elif module == "📚 AI Study Planner":
     and subject["completed_topics"] <= subject["total_topics"]
 ]
         if not valid_subjects:
-    st.warning(
-        "Please enter at least one valid subject. "
-        "Check that completed topics do not exceed total topics."
-    )
-    st.session_state.pop("study_plan_results", None)
+            st.warning(
+                "Please enter at least one valid subject. "
+                "Check that completed topics do not exceed total topics."
+            )
+            st.session_state.pop("study_plan_results", None)
         else:
             try:
                 st.session_state.study_plan_results = {
