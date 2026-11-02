@@ -1,379 +1,298 @@
-
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 
 DIFFICULTY_SCORE = {
     "Easy": 1,
     "Medium": 2,
-    "Hard": 3,
+    "Hard": 3
 }
 
 
 def _parse_deadline(deadline):
-    """Convert a date string into a date object."""
+    """Convert deadline into a date object."""
+    if isinstance(deadline, datetime):
+        return deadline.date()
+
+    if isinstance(deadline, date):
+        return deadline
+
     if isinstance(deadline, str):
         return datetime.strptime(deadline, "%Y-%m-%d").date()
-    return deadline
+
+    return date.today()
 
 
 def calculate_priority(
     deadline,
     difficulty,
     remaining_topics=1,
-    estimated_hours=1,
+    estimated_hours=1
 ):
-    """
-    Calculate priority using deadline, difficulty and remaining workload.
-    Higher scores indicate greater priority.
-    """
+    """Calculate subject priority using deadline and workload."""
+
     deadline = _parse_deadline(deadline)
+    days_left = max((deadline - date.today()).days, 1)
 
-    today = datetime.today().date()
-    days_left = (deadline - today).days
+    difficulty_value = DIFFICULTY_SCORE.get(difficulty, 2)
 
-    days_for_calculation = max(days_left, 1)
-    difficulty_value = DIFFICULTY_SCORE.get(
-        str(difficulty).title(), 2
-    )
-
-    workload = max(float(estimated_hours), 0.0)
-    topics = max(int(remaining_topics), 0)
-
-    if topics == 0 or workload == 0:
-        return 0.0
+    workload = max(remaining_topics, 1) * max(estimated_hours, 1)
 
     priority = (
-        difficulty_value
-        * (1 + topics / 10)
-        * (1 + workload / 10)
-        * 10
-        / days_for_calculation
-    )
-
-    if days_left <= 0:
-        priority *= 1.5
+        difficulty_value * workload
+    ) / days_left
 
     return round(priority, 2)
 
 
 def _prepare_subjects(subjects):
-    """Validate and enrich subject information."""
+    """Prepare subject data and calculate remaining workload."""
+
     prepared = []
 
     for subject in subjects:
-        name = str(
-            subject.get("name", "Untitled subject")
-        ).strip()
+        total_topics = int(subject.get("total_topics", 0))
+        completed_topics = int(subject.get("completed_topics", 0))
 
-        deadline = subject.get("deadline")
-
-        if deadline is None:
-            raise ValueError(
-                f"A deadline is required for {name}."
-            )
-
-        deadline = _parse_deadline(deadline)
-
-        difficulty = str(
-            subject.get("difficulty", "Medium")
-        ).title()
-
-        if difficulty not in DIFFICULTY_SCORE:
-            difficulty = "Medium"
-
-        total_topics = max(
-            int(subject.get("total_topics", 1)), 1
+        remaining_topics = max(
+            0, total_topics - completed_topics
         )
 
-        completed_topics = max(
-            int(subject.get("completed_topics", 0)), 0
+        estimated_hours = float(
+            subject.get("estimated_hours", 0)
         )
 
-        if completed_topics > total_topics:
-            raise ValueError(
-                f"Completed topics cannot exceed total topics for {name}."
-            )
-
-        remaining_topics = (
-            total_topics - completed_topics
-        )
-
-        estimated_hours = max(
-            float(subject.get("estimated_hours", 1)), 0.0
-        )
-
-        # Estimate remaining workload proportionally.
         remaining_hours = (
             estimated_hours * remaining_topics / total_topics
+            if total_topics > 0 else 0
+        )
+
+        deadline = _parse_deadline(
+            subject.get("deadline", date.today())
+        )
+
+        difficulty = subject.get("difficulty", "Medium")
+
+        progress = (
+            completed_topics / total_topics * 100
+            if total_topics > 0 else 0
         )
 
         priority = calculate_priority(
             deadline,
             difficulty,
             remaining_topics,
-            remaining_hours,
+            remaining_hours
         )
 
-        progress = (
-            completed_topics / total_topics
-        ) * 100
+        if remaining_topics == 0:
+            priority = 0
 
         prepared.append({
-            "Subject": name,
-            "Deadline": deadline,
-            "Difficulty": difficulty,
-            "Total Topics": total_topics,
-            "Completed Topics": completed_topics,
-            "Remaining Topics": remaining_topics,
-            "Estimated Hours": estimated_hours,
-            "Remaining Hours": round(remaining_hours, 2),
-            "Progress (%)": round(progress, 2),
-            "Priority Score": priority,
+            "name": subject["name"],
+            "deadline": deadline,
+            "difficulty": difficulty,
+            "total_topics": total_topics,
+            "completed_topics": completed_topics,
+            "remaining_topics": remaining_topics,
+            "estimated_hours": estimated_hours,
+            "remaining_hours": round(remaining_hours, 2),
+            "progress": round(progress, 1),
+            "priority": priority
         })
-
-    prepared.sort(
-        key=lambda item: item["Priority Score"],
-        reverse=True,
-    )
 
     return prepared
 
 
 def _allocate_hours(plans, daily_hours):
-    """Allocate daily study hours according to priority."""
-    daily_hours = float(daily_hours)
+    """Allocate daily study hours according to subject priority."""
 
-    if daily_hours < 0:
-        raise ValueError(
-            "Daily study hours cannot be negative."
-        )
-
-    active_plans = [
-        item for item in plans
-        if item["Remaining Topics"] > 0
-        and item["Remaining Hours"] > 0
+    active_subjects = [
+        subject for subject in plans
+        if subject["remaining_topics"] > 0
     ]
 
     total_priority = sum(
-        item["Priority Score"]
-        for item in active_plans
+        subject["priority"] for subject in active_subjects
     )
 
-    for item in plans:
-        item["Recommended Hours"] = 0.0
+    for subject in plans:
+        if subject["remaining_topics"] == 0:
+            subject["recommended_hours"] = 0
 
-    if not active_plans or daily_hours == 0:
-        return plans
-
-    if total_priority <= 0:
-        for item in active_plans:
-            item["Recommended Hours"] = round(
-                daily_hours / len(active_plans), 2
-            )
-    else:
-        for item in active_plans:
+        elif total_priority > 0:
             allocation = (
-                item["Priority Score"]
-                / total_priority
+                subject["priority"] / total_priority
             ) * daily_hours
 
-            item["Recommended Hours"] = round(
-                allocation, 2
+            subject["recommended_hours"] = round(
+                min(allocation, daily_hours), 2
             )
 
-    # Correct rounding differences.
-    difference = round(
-        daily_hours - sum(
-            item["Recommended Hours"]
-            for item in active_plans
-        ),
-        2,
-    )
-
-    active_plans[0]["Recommended Hours"] = round(
-        active_plans[0]["Recommended Hours"] + difference,
-        2,
-    )
+        else:
+            subject["recommended_hours"] = 0
 
     return plans
 
 
 def generate_plan(subjects, daily_hours):
-    """
-    Generate a prioritized daily study plan.
+    """Generate a priority-based study plan."""
 
-    Preserves the original function interface and output fields.
-    """
     plans = _prepare_subjects(subjects)
 
-    return _allocate_hours(
-        plans,
-        float(daily_hours),
+    plans = _allocate_hours(plans, daily_hours)
+
+    plans.sort(
+        key=lambda subject: subject["priority"],
+        reverse=True
     )
+
+    result = []
+
+    for subject in plans:
+        result.append({
+            "Subject": subject["name"],
+            "Deadline": subject["deadline"],
+            "Difficulty": subject["difficulty"],
+            "Total Topics": subject["total_topics"],
+            "Completed Topics": subject["completed_topics"],
+            "Remaining Topics": subject["remaining_topics"],
+            "Estimated Hours": subject["estimated_hours"],
+            "Remaining Hours": subject["remaining_hours"],
+            "Progress (%)": subject["progress"],
+            "Priority Score": subject["priority"],
+            "Recommended Hours": subject["recommended_hours"]
+        })
+
+    return result
 
 
 def generate_weekly_plan(subjects, daily_hours, days=7):
-    """
-    Generate a workload-aware weekly timetable.
-    Completed subjects are excluded from new-topic scheduling.
-    """
-    daily_hours = float(daily_hours)
-
-    if days < 1:
-        raise ValueError(
-            "Days must be at least 1."
-        )
-
-    if daily_hours < 0:
-        raise ValueError(
-            "Daily study hours cannot be negative."
-        )
+    """Generate a weekly timetable based on subject priorities."""
 
     plans = _prepare_subjects(subjects)
 
-    active_plans = [
-        item for item in plans
-        if item["Remaining Topics"] > 0
-        and item["Remaining Hours"] > 0
+    plans = _allocate_hours(plans, daily_hours)
+
+    plans.sort(
+        key=lambda subject: subject["priority"],
+        reverse=True
+    )
+
+    weekly_plan = []
+
+    active_subjects = [
+        subject for subject in plans
+        if subject["remaining_topics"] > 0
     ]
 
-    if not active_plans or daily_hours == 0:
-        return []
+    if not active_subjects:
+        return weekly_plan
 
-    today = datetime.today().date()
-    schedule = []
+    for day_number in range(days):
 
-    for day_index in range(days):
-
-        current_date = today + timedelta(
-            days=day_index
+        current_date = date.today() + timedelta(
+            days=day_number
         )
 
-        # Select the three highest-priority subjects.
-        ranked_subjects = sorted(
-            active_plans,
-            key=lambda item: (
-                item["Priority Score"]
-                * (1 + max(
-                    (item["Deadline"] - current_date).days,
-                    0,
-                ) / 10)
-            ),
-        )
-
-        selected = list(reversed(ranked_subjects))[:3]
-
-        total_priority = sum(
-            item["Priority Score"]
-            for item in selected
-        )
-
-        if total_priority <= 0:
-            continue
-
-        for subject in selected:
-
-            hours = (
-                subject["Priority Score"]
-                / total_priority
-            ) * daily_hours
-
-            # Revision sessions every third day.
-            if day_index % 3 == 2:
-                session_type = "Revision & Practice"
-            elif subject["Deadline"] <= current_date:
-                session_type = "Urgent Preparation"
-            else:
-                session_type = "Focused Study"
-
-            schedule.append({
+        if (day_number + 1) % 3 == 0:
+            weekly_plan.append({
                 "Day": current_date.strftime("%A"),
                 "Date": current_date,
-                "Subject": subject["Subject"],
-                "Study Hours": round(hours, 2),
-                "Session Length (minutes)": int(
-                    round(hours * 60)
-                ),
-                "Session Type": session_type,
-                "Remaining Topics": subject["Remaining Topics"],
-                "Progress (%)": subject["Progress (%)"],
+                "Subject": "Revision",
+                "Recommended Hours": daily_hours,
+                "Remaining Topics": 0,
+                "Progress (%)": 100
+            })
+            continue
+
+        daily_subjects = active_subjects[:3]
+
+        total_priority = sum(
+            subject["priority"]
+            for subject in daily_subjects
+        )
+
+        for subject in daily_subjects:
+
+            if total_priority > 0:
+                allocated_hours = (
+                    subject["priority"] / total_priority
+                ) * daily_hours
+            else:
+                allocated_hours = daily_hours / len(daily_subjects)
+
+            allocated_hours = round(allocated_hours, 2)
+
+            weekly_plan.append({
+                "Day": current_date.strftime("%A"),
+                "Date": current_date,
+                "Subject": subject["name"],
+                "Recommended Hours": allocated_hours,
+                "Remaining Topics": subject["remaining_topics"],
+                "Progress (%)": subject["progress"]
             })
 
-    return schedule
+    return weekly_plan
 
 
 def get_study_recommendations(subjects):
-    """Generate recommendations based on workload and progress."""
-    plans = _prepare_subjects(subjects)
+    """Generate personalized study recommendations."""
 
     recommendations = []
 
-    if not plans:
-        return [
-            "Add at least one subject to receive recommendations."
-        ]
+    plans = _prepare_subjects(subjects)
 
-    today = datetime.today().date()
+    if not plans:
+        return ["Add subjects to generate study recommendations."]
 
     for subject in plans:
 
-        name = subject["Subject"]
-        days_left = (
-            subject["Deadline"] - today
-        ).days
+        name = subject["name"]
+        deadline = subject["deadline"]
+        remaining_topics = subject["remaining_topics"]
+        progress = subject["progress"]
 
-        remaining = subject["Remaining Topics"]
-        progress = subject["Progress (%)"]
-        difficulty = subject["Difficulty"]
-        remaining_hours = subject["Remaining Hours"]
+        days_left = (deadline - date.today()).days
 
-        if remaining == 0:
+        if remaining_topics == 0:
             recommendations.append(
-                f"{name}: All topics are completed. "
-                "Use practice tests and revision to maintain preparation."
-            )
-            continue
-
-        if days_left < 0:
-            recommendations.append(
-                f"{name}: The deadline has passed. "
-                "Create an urgent catch-up plan and confirm the revised deadline."
+                f"{name}: Subject completed. Focus on revision and practice."
             )
 
-        elif days_left == 0:
+        elif days_left < 0:
             recommendations.append(
-                f"{name}: Your deadline is today. "
-                "Focus on important topics and quick revision."
+                f"{name}: Deadline has passed. Prioritize completing "
+                "the remaining topics."
             )
 
         elif days_left <= 3:
             recommendations.append(
-                f"{name}: Only {days_left} day(s) remain. "
-                f"Prioritize the {remaining} unfinished topics."
+                f"{name}: Urgent! Only {days_left} days remain. "
+                "Focus on important topics."
             )
 
-        elif difficulty == "Hard":
+        elif days_left <= 7:
             recommendations.append(
-                f"{name}: This is a difficult subject. "
-                "Use focused study blocks and solve practice questions."
+                f"{name}: Deadline approaching. Increase your "
+                "daily preparation time."
             )
 
-        elif progress < 50:
+        elif progress < 30:
             recommendations.append(
-                f"{name}: Your completion is {progress:.0f}%. "
-                "Focus on completing the remaining topics."
+                f"{name}: Progress is below 30%. Try completing "
+                "the foundational topics first."
+            )
+
+        elif progress < 70:
+            recommendations.append(
+                f"{name}: Good progress. Maintain consistency "
+                "and complete the remaining topics."
             )
 
         else:
             recommendations.append(
-                f"{name}: You have completed {progress:.0f}% of the syllabus. "
-                "Concentrate on revision and practice."
-            )
-
-        if remaining > 0:
-            recommendations.append(
-                f"{name}: Approximately {remaining_hours:.1f} "
-                "preparation hours remain based on your workload estimate."
+                f"{name}: Almost complete. Focus on revision "
+                "and practice questions."
             )
 
     recommendations.append(
@@ -382,84 +301,77 @@ def get_study_recommendations(subjects):
     )
 
     return recommendations
+
+
 def generate_smart_insights(subjects, daily_hours):
-"""Generate deadline alerts, workload analysis and completion forecasts."""
-from datetime import date
+    """Generate deadline alerts, workload analysis and forecasts."""
 
+    insights = []
+    total_required_daily_hours = 0
 
-insights = []
-total_required_daily_hours = 0
+    for subject in _prepare_subjects(subjects):
 
-for subject in subjects:
-    total_topics = subject["total_topics"]
-    remaining_topics = subject["remaining_topics"]
-    estimated_hours = subject["estimated_hours"]
-    deadline = subject["deadline"]
+        total_topics = subject["total_topics"]
+        remaining_topics = subject["remaining_topics"]
+        remaining_hours = subject["remaining_hours"]
+        deadline = subject["deadline"]
 
-    if total_topics > 0:
-        remaining_hours = (
-            estimated_hours * remaining_topics / total_topics
-        )
-    else:
-        remaining_hours = 0
+        days_left = (deadline - date.today()).days
 
-    days_left = (deadline - date.today()).days
+        if remaining_topics == 0:
+            required_daily_hours = 0
+        elif days_left > 0:
+            required_daily_hours = remaining_hours / days_left
+        else:
+            required_daily_hours = remaining_hours
 
-    if days_left > 0:
-        required_daily_hours = remaining_hours / days_left
-    else:
-        required_daily_hours = remaining_hours
+        total_required_daily_hours += required_daily_hours
 
-    total_required_daily_hours += required_daily_hours
+        progress = subject["progress"]
 
-    progress = (
-        (subject["completed_topics"] / total_topics) * 100
-        if total_topics > 0 else 0
+        # Deadline alert
+        if remaining_topics == 0:
+            deadline_alert = "Completed"
+        elif days_left < 0:
+            deadline_alert = "Overdue"
+        elif days_left <= 3:
+            deadline_alert = "Urgent"
+        elif days_left <= 7:
+            deadline_alert = "Approaching"
+        else:
+            deadline_alert = "On Schedule"
+
+        # Progress status
+        if remaining_topics == 0:
+            status = "Completed"
+        elif days_left < 0 or days_left <= 3:
+            status = "Critical"
+        elif required_daily_hours > daily_hours:
+            status = "Needs Attention"
+        else:
+            status = "On Track"
+
+        insights.append({
+            "Subject": subject["name"],
+            "Deadline Alert": deadline_alert,
+            "Days Left": days_left,
+            "Progress (%)": progress,
+            "Remaining Hours": round(remaining_hours, 1),
+            "Required Hours/Day": round(required_daily_hours, 2),
+            "Status": status
+        })
+
+    workload_status = (
+        "Manageable"
+        if total_required_daily_hours <= daily_hours
+        else "Overloaded"
     )
 
-    # Deadline alert
-    if remaining_topics == 0:
-        deadline_alert = "Completed"
-    elif days_left < 0:
-        deadline_alert = "Overdue"
-    elif days_left <= 3:
-        deadline_alert = "Urgent"
-    elif days_left <= 7:
-        deadline_alert = "Approaching"
-    else:
-        deadline_alert = "On Schedule"
-
-    # Progress status
-    if remaining_topics == 0:
-        status = "Completed"
-    elif days_left < 0 or days_left <= 3:
-        status = "Critical"
-    elif required_daily_hours > daily_hours:
-        status = "Needs Attention"
-    else:
-        status = "On Track"
-
-    insights.append({
-        "Subject": subject["name"],
-        "Deadline Alert": deadline_alert,
-        "Days Left": days_left,
-        "Progress (%)": round(progress, 1),
-        "Remaining Hours": round(remaining_hours, 1),
-        "Required Hours/Day": round(required_daily_hours, 2),
-        "Status": status
-    })
-
-if total_required_daily_hours <= daily_hours:
-    workload_status = "Manageable"
-else:
-    workload_status = "Overloaded"
-
-return {
-    "subjects": insights,
-    "total_daily_hours_required": round(
-        total_required_daily_hours, 2
-    ),
-    "daily_hours_available": daily_hours,
-    "workload_status": workload_status
-}
-
+    return {
+        "subjects": insights,
+        "total_daily_hours_required": round(
+            total_required_daily_hours, 2
+        ),
+        "daily_hours_available": daily_hours,
+        "workload_status": workload_status
+    }
