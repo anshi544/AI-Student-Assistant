@@ -1085,7 +1085,7 @@ if weekly_rows:
     )
 else:
     st.info("Enter a positive daily study time to create a timetable.")
-            else:
+else:
                 st.info("Enter a positive daily study time to create a timetable.")
 
             st.markdown("#### Suggested Study Rhythm")
