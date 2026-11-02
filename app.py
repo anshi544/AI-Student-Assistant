@@ -1067,33 +1067,58 @@ for item in results["weekly"]:
         "Progress (%)": item["Progress (%)"]
     })
 
-if weekly_rows:
-    st.dataframe(
-        weekly_rows,
-        use_container_width=True,
-        hide_index=True
-    )
+            weekly_rows = []
 
-    st.download_button(
-        "⬇️ Download timetable (CSV)",
-        data=__import__("pandas").DataFrame(
-            weekly_rows
-        ).to_csv(index=False).encode("utf-8"),
-        file_name="weekly_study_timetable.csv",
-        mime="text/csv",
-        use_container_width=True,
-    )
-else:
-    st.info("Enter a positive daily study time to create a timetable.")
-else:
-                st.info("Enter a positive daily study time to create a timetable.")
+            for item in results["weekly"]:
+                study_hours = item["Recommended Hours"]
+
+                weekly_rows.append({
+                    "Day": item["Day"],
+                    "Date": item["Date"],
+                    "Subject": item["Subject"],
+                    "Study Hours": study_hours,
+                    "Session Length (min)": round(study_hours * 60),
+                    "Session Type": (
+                        "Revision"
+                        if item["Subject"] == "Revision"
+                        else "Study"
+                    ),
+                    "Remaining Topics": item["Remaining Topics"],
+                    "Progress (%)": item["Progress (%)"]
+                })
+
+            if weekly_rows:
+                st.dataframe(
+                    weekly_rows,
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                st.download_button(
+                    "⬇️ Download timetable (CSV)",
+                    data=__import__("pandas").DataFrame(
+                        weekly_rows
+                    ).to_csv(index=False).encode("utf-8"),
+                    file_name="weekly_study_timetable.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                )
+            else:
+                st.info("No timetable entries available.")
 
             st.markdown("#### Suggested Study Rhythm")
             st.markdown(
-                "- **Focused block:** study for 25–50 minutes.\\n"
-                "- **Short break:** take 5–10 minutes between focused blocks.\\n"
+                "- **Focused block:** study for 25–50 minutes.\n"
+                "- **Short break:** take 5–10 minutes between focused blocks.\n"
                 "- **Revision:** test yourself or solve practice questions instead of only rereading notes."
             )
+
+        with tips_tab:
+            st.markdown("#### Next Best Actions")
+            for index, recommendation in enumerate(
+                results["recommendations"], start=1
+            ):
+                st.markdown(f"{index}. {recommendation}")
 
         with tips_tab:
             st.markdown("#### Next Best Actions")
