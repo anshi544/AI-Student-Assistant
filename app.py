@@ -710,9 +710,23 @@ if module == "🏠 Dashboard":
         "Your academic planning and career tools are ready to use."
     )
 
-# Keep the next existing elif at the left margin:
+    st.info(
+        "Select any module from the sidebar to begin. "
+        "Your academic planning and career tools are ready to use."
+    )
+
+
+# ==================================================
+# PROFILE
+# ==================================================
 elif module == "👤 My Profile":
-    # Your existing My Profile code continues here
+    st.markdown('<div class="app-eyebrow">YOUR ACCOUNT</div>', unsafe_allow_html=True)
+    st.header("👤 My Student Profile")
+    st.write("Manage the details associated with your student workspace.")
+
+    with st.form("profile_form"):
+        full_name = st.text_input("Full name", value=profile.get("full_name") or "")
+        course = st.text_input("Course", value=profile.get("course") or "")
 
 
 # ==================================================
