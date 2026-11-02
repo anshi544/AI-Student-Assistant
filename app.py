@@ -919,17 +919,63 @@ elif module == "📚 AI Study Planner":
     if results:
         st.divider()
         st.subheader("📊 Your Study Overview")
-        total_subjects = len(results["subjects"])
-        urgent_subjects = sum(
-            1 for item in results["subjects"] if item["deadline"] <= date.today()
+               total_subjects = len(results["subjects"])
+
+        total_topics = sum(
+            subject["total_topics"] for subject in results["subjects"]
         )
+
+        completed_topics = sum(
+            subject["completed_topics"] for subject in results["subjects"]
+        )
+
+        pending_topics = total_topics - completed_topics
+
+        overall_progress = (
+            completed_topics / total_topics * 100
+            if total_topics > 0 else 0
+        )
+
+        remaining_hours = sum(
+            subject["estimated_hours"] * (
+                subject["remaining_topics"] / subject["total_topics"]
+            )
+            for subject in results["subjects"]
+        )
+
+        urgent_subjects = sum(
+            1 for item in results["subjects"]
+            if item["deadline"] <= date.today()
+        )
+
         m1, m2, m3 = st.columns(3)
+
         with m1:
-            st.metric("Subjects", total_subjects)
+            st.metric("Total Subjects", total_subjects)
+
         with m2:
-            st.metric("Daily Study Time", f"{results['daily_hours']:g} hrs")
+            st.metric("Completed Topics", completed_topics)
+
         with m3:
-            st.metric("Deadlines Today or Passed", urgent_subjects)
+            st.metric("Pending Topics", pending_topics)
+
+        m4, m5, m6 = st.columns(3)
+
+        with m4:
+            st.metric("Overall Progress", f"{overall_progress:.1f}%")
+
+        with m5:
+            st.metric("Remaining Study Hours", f"{remaining_hours:.1f} hrs")
+
+        with m6:
+            st.metric("Urgent Deadlines", urgent_subjects)
+
+        st.progress(
+            overall_progress / 100,
+            text=f"Overall syllabus completion: {overall_progress:.1f}%"
+        )
+
+        st.divider()
 
         plan_tab, week_tab, tips_tab = st.tabs(
             ["🎯 Priority Plan", "🗓️ Timetable", "💡 Recommendations"]
