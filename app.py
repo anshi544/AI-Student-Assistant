@@ -738,24 +738,64 @@ elif module == "👤 My Profile":
 # PROFILE
 # ==================================================
 elif module == "👤 My Profile":
-    st.markdown('<div class="app-eyebrow">YOUR ACCOUNT</div>', unsafe_allow_html=True)
+
+    st.markdown(
+        '<div class="app-eyebrow">YOUR ACCOUNT</div>',
+        unsafe_allow_html=True
+    )
+
     st.header("👤 My Student Profile")
     st.write("Manage the details associated with your student workspace.")
 
     with st.form("profile_form"):
-        full_name = st.text_input("Full name", value=profile.get("full_name") or "")
-        course = st.text_input("Course", value=profile.get("course") or "")
-        year_options = ["1st year", "2nd year", "3rd year", "4th year", "Other"]
+
+        full_name = st.text_input(
+            "Full name",
+            value=profile.get("full_name") or ""
+        )
+
+        course = st.text_input(
+            "Course",
+            value=profile.get("course") or ""
+        )
+
+        year_options = [
+            "1st year",
+            "2nd year",
+            "3rd year",
+            "4th year",
+            "Other"
+        ]
+
         saved_year = profile.get("study_year") or "Other"
-        study_year_index = year_options.index(saved_year) if saved_year in year_options else 4
-        study_year = st.selectbox("Current study year", year_options, index=study_year_index)
-        save_profile = st.form_submit_button("Save profile")
+
+        study_year_index = (
+            year_options.index(saved_year)
+            if saved_year in year_options
+            else 4
+        )
+
+        study_year = st.selectbox(
+            "Current study year",
+            year_options,
+            index=study_year_index
+        )
+
+        save_profile = st.form_submit_button(
+            "Save profile",
+            use_container_width=True
+        )
 
     if save_profile:
+
         if not full_name.strip() or not course.strip():
+
             st.warning("Please enter your name and course.")
+
         else:
+
             try:
+
                 supabase.table("profiles").upsert(
                     {
                         "id": user_id,
@@ -764,29 +804,44 @@ elif module == "👤 My Profile":
                         "study_year": study_year,
                     }
                 ).execute()
+
                 st.success("Profile saved successfully.")
                 st.rerun()
+
             except Exception:
-                    st.error(
-                        "Could not save your profile. Confirm that the profiles table and its "
-                        "Row Level Security policies are configured correctly."
-                    )
+
+                st.error(
+                    "Could not save your profile. Confirm that the "
+                    "profiles table and its Row Level Security policies "
+                    "are configured correctly."
+                )
 
 
 # ==================================================
-# STUDY PLANNER (ENHANCED DAILY + WEEKLY PLANNING)
+# STUDY PLANNER — DAILY + WEEKLY + SMART INSIGHTS
 # ==================================================
 elif module == "📚 AI Study Planner":
-    st.markdown('<div class="app-eyebrow">PLAN WITH PURPOSE</div>', unsafe_allow_html=True)
+
+    st.markdown(
+        '<div class="app-eyebrow">PLAN WITH PURPOSE</div>',
+        unsafe_allow_html=True
+    )
+
     st.header("📚 AI Study Planner")
+
     st.write(
         "Build a practical study plan using subject deadlines and difficulty. "
         "Review daily priorities, a weekly timetable, and study recommendations."
     )
+
     st.info(
         "For useful results, enter each subject's actual deadline and difficulty. "
         "The planner uses these details to prioritize study time."
     )
+
+    # ------------------------------------------
+    # DAILY STUDY SETTINGS
+    # ------------------------------------------
 
     daily_hours = st.number_input(
         "Available study hours per day",
@@ -797,6 +852,7 @@ elif module == "📚 AI Study Planner":
         help="Enter focused study time, excluding meals and long breaks.",
         key="planner_daily_hours",
     )
+
     schedule_days = st.selectbox(
         "Schedule length",
         options=[3, 5, 7],
@@ -805,21 +861,33 @@ elif module == "📚 AI Study Planner":
         key="planner_schedule_days",
     )
 
+    # ------------------------------------------
+    # SUBJECT DETAILS
+    # ------------------------------------------
+
     st.subheader("📝 Subject Details")
+
     number_of_subjects = st.number_input(
-        "Number of subjects", min_value=1, max_value=10, value=3, step=1,
+        "Number of subjects",
+        min_value=1,
+        max_value=10,
+        value=3,
+        step=1,
         key="planner_subject_count",
     )
 
     subjects = []
 
     for i in range(int(number_of_subjects)):
+
         with st.container(border=True):
+
             st.markdown(f"### 📘 Subject {i + 1}")
 
             col1, col2 = st.columns(2)
 
             with col1:
+
                 name = st.text_input(
                     "Subject name",
                     key=f"name_{i}",
@@ -839,6 +907,7 @@ elif module == "📚 AI Study Planner":
                 )
 
             with col2:
+
                 total_topics = st.number_input(
                     "Total topics",
                     min_value=1,
@@ -867,10 +936,12 @@ elif module == "📚 AI Study Planner":
                 )
 
             if completed_topics > total_topics:
-                st.warning("Completed topics cannot exceed total topics.")
+
+                st.warning(
+                    "Completed topics cannot exceed total topics."
+                )
 
             else:
-                remaining_topics = int(total_topics - completed_topics)
 
                 progress = completed_topics / total_topics
 
@@ -879,81 +950,128 @@ elif module == "📚 AI Study Planner":
                     text=f"Topic completion: {progress * 100:.0f}%"
                 )
 
-            subjects.append({
-                "name": name.strip(),
-                "deadline": deadline,
-                "difficulty": difficulty,
-                "total_topics": int(total_topics),
-                "completed_topics": int(completed_topics),
-                "remaining_topics": max(
-                    0, int(total_topics - completed_topics)
-                ),
-                "estimated_hours": float(estimated_hours),
-            })
+            subjects.append(
+                {
+                    "name": name.strip(),
+                    "deadline": deadline,
+                    "difficulty": difficulty,
+                    "total_topics": int(total_topics),
+                    "completed_topics": int(completed_topics),
+                    "remaining_topics": max(
+                        0,
+                        int(total_topics - completed_topics)
+                    ),
+                    "estimated_hours": float(estimated_hours),
+                }
+            )
 
-    if st.button("🚀 Generate Study Schedule", type="primary", use_container_width=True):
+    # ------------------------------------------
+    # GENERATE STUDY SCHEDULE
+    # ------------------------------------------
+
+    if st.button(
+        "🚀 Generate Study Schedule",
+        type="primary",
+        use_container_width=True
+    ):
+
         valid_subjects = [
-    subject for subject in subjects
-    if subject["name"]
-    and subject["completed_topics"] <= subject["total_topics"]
-]
+            subject
+            for subject in subjects
+            if subject["name"]
+            and subject["completed_topics"] <= subject["total_topics"]
+        ]
+
         if not valid_subjects:
+
             st.warning(
                 "Please enter at least one valid subject. "
                 "Check that completed topics do not exceed total topics."
             )
-            st.session_state.pop("study_plan_results", None)
+
+            st.session_state.pop(
+                "study_plan_results",
+                None
+            )
+
         else:
+
             try:
-                st.session_state.study_plan_results = {
-    "subjects": valid_subjects,
-    "daily_hours": float(daily_hours),
-    "days": int(schedule_days),
 
-    "plan": generate_plan(
-        valid_subjects,
-        float(daily_hours)
-    ),
+                with st.spinner("Preparing your study schedule..."):
 
-    "weekly": generate_weekly_plan(
-        valid_subjects,
-        float(daily_hours),
-        days=int(schedule_days)
-    ),
+                    st.session_state.study_plan_results = {
 
-    "recommendations": get_study_recommendations(
-        valid_subjects
-    ),
+                        "subjects": valid_subjects,
 
-    "smart_insights": generate_smart_insights(
-        valid_subjects,
-        float(daily_hours)
-    ),
-}
+                        "daily_hours": float(daily_hours),
+
+                        "days": int(schedule_days),
+
+                        "plan": generate_plan(
+                            valid_subjects,
+                            float(daily_hours)
+                        ),
+
+                        "weekly": generate_weekly_plan(
+                            valid_subjects,
+                            float(daily_hours),
+                            days=int(schedule_days)
+                        ),
+
+                        "recommendations": get_study_recommendations(
+                            valid_subjects
+                        ),
+
+                        "smart_insights": generate_smart_insights(
+                            valid_subjects,
+                            float(daily_hours)
+                        ),
+                    }
+
+                st.success("Your study schedule is ready!")
+
             except Exception as exc:
-                st.error("We couldn't generate the schedule. Check your subject details and try again.")
+
+                st.error(
+                    "We couldn't generate the schedule. "
+                    "Check your subject details and try again."
+                )
+
                 with st.expander("Technical details"):
+
                     st.code(str(exc))
 
+    # ------------------------------------------
+    # DISPLAY GENERATED RESULTS
+    # ------------------------------------------
+
     results = st.session_state.get("study_plan_results")
+
     if results:
+
         st.divider()
+
         st.subheader("📊 Your Study Overview")
+
         total_subjects = len(results["subjects"])
 
         total_topics = sum(
-            subject["total_topics"] for subject in results["subjects"]
+            subject["total_topics"]
+            for subject in results["subjects"]
         )
 
         completed_topics = sum(
-            subject["completed_topics"] for subject in results["subjects"]
+            subject["completed_topics"]
+            for subject in results["subjects"]
         )
 
         pending_topics = total_topics - completed_topics
 
         overall_progress = (
             completed_topics / total_topics * 100
-            if total_topics > 0 else 0
+            if total_topics > 0
+            else 0
         )
 
         remaining_hours = sum(
@@ -964,9 +1082,13 @@ elif module == "📚 AI Study Planner":
         )
 
         urgent_subjects = sum(
-            1 for item in results["subjects"]
+            1
+            for item in results["subjects"]
             if item["deadline"] <= date.today()
+            and item["remaining_topics"] > 0
         )
+
+        # Overview metrics
 
         m1, m2, m3 = st.columns(3)
 
@@ -982,10 +1104,16 @@ elif module == "📚 AI Study Planner":
         m4, m5, m6 = st.columns(3)
 
         with m4:
-            st.metric("Overall Progress", f"{overall_progress:.1f}%")
+            st.metric(
+                "Overall Progress",
+                f"{overall_progress:.1f}%"
+            )
 
         with m5:
-            st.metric("Remaining Study Hours", f"{remaining_hours:.1f} hrs")
+            st.metric(
+                "Remaining Study Hours",
+                f"{remaining_hours:.1f} hrs"
+            )
 
         with m6:
             st.metric("Urgent Deadlines", urgent_subjects)
@@ -997,97 +1125,114 @@ elif module == "📚 AI Study Planner":
 
         st.divider()
 
+        # ------------------------------------------
+        # PLANNER TABS
+        # ------------------------------------------
+
         plan_tab, week_tab, tips_tab, insights_tab = st.tabs(
-    [
-        "🎯 Priority Plan",
-        "🗓️ Timetable",
-        "💡 Recommendations",
-        "📊 Smart Insights"
-    ]
-)
+            [
+                "🎯 Priority Plan",
+                "🗓️ Timetable",
+                "💡 Recommendations",
+                "📊 Smart Insights"
+            ]
+        )
+
+        # ------------------------------------------
+        # TAB 1: PRIORITY PLAN
+        # ------------------------------------------
 
         with plan_tab:
+
             st.markdown("#### Recommended Study Allocation")
+
             st.caption(
-                "Subjects are ranked by deadline urgency and difficulty. Recommended hours "
-                "are proportional to the priority score."
+                "Subjects are ranked by deadline urgency and difficulty. "
+                "Recommended hours are proportional to the priority score."
             )
+
             display_plan = []
+
             for item in results["plan"]:
-                display_plan.append({
-                    "Subject": item["Subject"],
-                    "Deadline": item["Deadline"],
-                    "Difficulty": item["Difficulty"],
-                    "Priority Score": item["Priority Score"],
-                    "Recommended Hours/Day": item["Recommended Hours"],
-                })
-            st.dataframe(display_plan, use_container_width=True, hide_index=True)
-            st.download_button(
-                "⬇️ Download priority plan (CSV)",
-                data=__import__("pandas").DataFrame(display_plan).to_csv(index=False).encode("utf-8"),
-                file_name="study_priority_plan.csv",
-                mime="text/csv",
-                use_container_width=True,
-            )
+
+                display_plan.append(
+                    {
+                        "Subject": item["Subject"],
+                        "Deadline": item["Deadline"],
+                        "Difficulty": item["Difficulty"],
+                        "Priority Score": item["Priority Score"],
+                        "Recommended Hours/Day": item["Recommended Hours"],
+                    }
+                )
+
+            if display_plan:
+
+                st.dataframe(
+                    display_plan,
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                st.download_button(
+                    "⬇️ Download priority plan (CSV)",
+
+                    data=__import__("pandas").DataFrame(
+                        display_plan
+                    ).to_csv(index=False).encode("utf-8"),
+
+                    file_name="study_priority_plan.csv",
+
+                    mime="text/csv",
+
+                    use_container_width=True,
+                )
+
+            else:
+
+                st.info("No priority plan is available.")
+
+        # ------------------------------------------
+        # TAB 2: WEEKLY TIMETABLE
+        # ------------------------------------------
 
         with week_tab:
-            st.markdown(f"#### Your {results['days']}-Day Study Timetable")
-            st.caption(
-                "The schedule rotates subjects, limits each day to up to three subjects, "
-                "and labels periodic sessions as revision. Use the plan as a starting point "
-                "and adjust it to your actual class timetable."
+
+            st.markdown(
+                f"#### Your {results['days']}-Day Study Timetable"
             )
-            weekly_rows = []
-            for item in results["weekly"]:
-                weekly_rows.append({
-                    "Day": item["Day"],
-                    "Date": item["Date"],
-                    "Subject": item["Subject"],
-                    "Study Hours": item["Study Hours"],
-                    "Session Length (min)": item["Session Length (minutes)"],
-                    "Session Type": item["Session Type"],
-                })
-            weekly_rows = []
 
-for item in results["weekly"]:
-    study_hours = item["Recommended Hours"]
-
-    weekly_rows.append({
-        "Day": item["Day"],
-        "Date": item["Date"],
-        "Subject": item["Subject"],
-        "Study Hours": study_hours,
-        "Session Length (min)": round(study_hours * 60),
-        "Session Type": (
-            "Revision"
-            if item["Subject"] == "Revision"
-            else "Study"
-        ),
-        "Remaining Topics": item["Remaining Topics"],
-        "Progress (%)": item["Progress (%)"]
-    })
+            st.caption(
+                "The schedule rotates subjects and recommends study sessions. "
+                "Use it as a starting point and adjust it to your actual class timetable."
+            )
 
             weekly_rows = []
 
             for item in results["weekly"]:
+
                 study_hours = item["Recommended Hours"]
 
-                weekly_rows.append({
-                    "Day": item["Day"],
-                    "Date": item["Date"],
-                    "Subject": item["Subject"],
-                    "Study Hours": study_hours,
-                    "Session Length (min)": round(study_hours * 60),
-                    "Session Type": (
-                        "Revision"
-                        if item["Subject"] == "Revision"
-                        else "Study"
-                    ),
-                    "Remaining Topics": item["Remaining Topics"],
-                    "Progress (%)": item["Progress (%)"]
-                })
+                weekly_rows.append(
+                    {
+                        "Day": item["Day"],
+                        "Date": item["Date"],
+                        "Subject": item["Subject"],
+                        "Study Hours": study_hours,
+                        "Session Length (min)": round(
+                            study_hours * 60
+                        ),
+                        "Session Type": (
+                            "Revision"
+                            if item["Subject"] == "Revision"
+                            else "Study"
+                        ),
+                        "Remaining Topics": item["Remaining Topics"],
+                        "Progress (%)": item["Progress (%)"]
+                    }
+                )
 
             if weekly_rows:
+
                 st.dataframe(
                     weekly_rows,
                     use_container_width=True,
@@ -1096,69 +1241,88 @@ for item in results["weekly"]:
 
                 st.download_button(
                     "⬇️ Download timetable (CSV)",
+
                     data=__import__("pandas").DataFrame(
                         weekly_rows
                     ).to_csv(index=False).encode("utf-8"),
+
                     file_name="weekly_study_timetable.csv",
+
                     mime="text/csv",
+
                     use_container_width=True,
                 )
+
             else:
+
                 st.info("No timetable entries available.")
 
             st.markdown("#### Suggested Study Rhythm")
+
             st.markdown(
                 "- **Focused block:** study for 25–50 minutes.\n"
                 "- **Short break:** take 5–10 minutes between focused blocks.\n"
                 "- **Revision:** test yourself or solve practice questions instead of only rereading notes."
             )
 
-        with tips_tab:
-            st.markdown("#### Next Best Actions")
-            for index, recommendation in enumerate(
-                results["recommendations"], start=1
-            ):
-                st.markdown(f"{index}. {recommendation}")
+        # ------------------------------------------
+        # TAB 3: RECOMMENDATIONS
+        # ------------------------------------------
 
         with tips_tab:
+
             st.markdown("#### Next Best Actions")
-            for index, recommendation in enumerate(results["recommendations"], start=1):
-                st.markdown(f"{index}. {recommendation}")
-                        # ------------------------------------------
-        # SMART STUDY INSIGHTS
+
+            for index, recommendation in enumerate(
+                results["recommendations"],
+                start=1
+            ):
+
+                st.markdown(
+                    f"{index}. {recommendation}"
+                )
+
         # ------------------------------------------
+        # TAB 4: SMART STUDY INSIGHTS
+        # ------------------------------------------
+
         with insights_tab:
 
             st.markdown("#### 📊 Smart Study Analysis")
 
             insights = results["smart_insights"]
 
-            # Workload overview
             col1, col2, col3 = st.columns(3)
 
             with col1:
+
                 st.metric(
                     "Required Daily Hours",
                     f"{insights['total_daily_hours_required']} hrs"
                 )
 
             with col2:
+
                 st.metric(
                     "Available Daily Hours",
                     f"{insights['daily_hours_available']} hrs"
                 )
 
             with col3:
+
                 st.metric(
                     "Workload Status",
                     insights["workload_status"]
                 )
 
             if insights["workload_status"] == "Manageable":
+
                 st.success(
                     "Your estimated daily workload fits within your available study hours."
                 )
+
             else:
+
                 st.warning(
                     "Your estimated workload exceeds your available daily study hours. "
                     "Consider adjusting your schedule."
@@ -1194,31 +1358,50 @@ for item in results["weekly"]:
                     forecast_col1, forecast_col2 = st.columns(2)
 
                     with forecast_col1:
+
                         st.write(
                             f"Remaining hours: **{subject['Remaining Hours']} hrs**"
                         )
 
                     with forecast_col2:
+
                         st.write(
                             f"Required daily hours: **{subject['Required Hours/Day']} hrs**"
                         )
 
                     if subject["Status"] == "Completed":
+
                         st.success("Subject completed!")
 
                     elif subject["Status"] == "Critical":
+
                         st.error("Critical: Immediate attention required.")
 
                     elif subject["Status"] == "Needs Attention":
-                        st.warning("Needs attention: Increase available study time.")
+
+                        st.warning(
+                            "Needs attention: Increase available study time."
+                        )
 
                     else:
+
                         st.success("On track!")
 
-        if st.button("🧹 Clear generated schedule", key="clear_study_schedule"):
-            st.session_state.pop("study_plan_results", None)
-            st.rerun()
+        # ------------------------------------------
+        # CLEAR GENERATED SCHEDULE
+        # ------------------------------------------
 
+        if st.button(
+            "🧹 Clear generated schedule",
+            key="clear_study_schedule"
+        ):
+
+            st.session_state.pop(
+                "study_plan_results",
+                None
+            )
+
+            st.rerun()
 
 # ==================================================
 # RESUME ANALYZER (EXISTING FUNCTIONALITY PRESERVED)
