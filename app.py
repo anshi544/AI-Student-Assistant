@@ -3,7 +3,12 @@ from datetime import date
 from html import escape
 from supabase import create_client, Client
 
-from planner import generate_plan, generate_weekly_plan, get_study_recommendations
+from planner import (
+    generate_plan,
+    generate_weekly_plan,
+    get_study_recommendations,
+    generate_smart_insights
+)
 from resume_analyzer import extract_text_from_pdf, analyze_resume, CAREER_SKILLS
 from offline_assistant import answer_from_pdf, CAREER_ROADMAPS, INTERVIEW_BANK
 
@@ -901,15 +906,30 @@ elif module == "📚 AI Study Planner":
         else:
             try:
                 st.session_state.study_plan_results = {
-                    "subjects": valid_subjects,
-                    "daily_hours": float(daily_hours),
-                    "days": int(schedule_days),
-                    "plan": generate_plan(valid_subjects, float(daily_hours)),
-                    "weekly": generate_weekly_plan(
-                        valid_subjects, float(daily_hours), days=int(schedule_days)
-                    ),
-                    "recommendations": get_study_recommendations(valid_subjects),
-                }
+    "subjects": valid_subjects,
+    "daily_hours": float(daily_hours),
+    "days": int(schedule_days),
+
+    "plan": generate_plan(
+        valid_subjects,
+        float(daily_hours)
+    ),
+
+    "weekly": generate_weekly_plan(
+        valid_subjects,
+        float(daily_hours),
+        days=int(schedule_days)
+    ),
+
+    "recommendations": get_study_recommendations(
+        valid_subjects
+    ),
+
+    "smart_insights": generate_smart_insights(
+        valid_subjects,
+        float(daily_hours)
+    ),
+}
             except Exception as exc:
                 st.error("We couldn't generate the schedule. Check your subject details and try again.")
                 with st.expander("Technical details"):
@@ -977,9 +997,14 @@ elif module == "📚 AI Study Planner":
 
         st.divider()
 
-        plan_tab, week_tab, tips_tab = st.tabs(
-            ["🎯 Priority Plan", "🗓️ Timetable", "💡 Recommendations"]
-        )
+        plan_tab, week_tab, tips_tab, insights_tab = st.tabs(
+    [
+        "🎯 Priority Plan",
+        "🗓️ Timetable",
+        "💡 Recommendations",
+        "📊 Smart Insights"
+    ]
+)
 
         with plan_tab:
             st.markdown("#### Recommended Study Allocation")
@@ -1022,15 +1047,44 @@ elif module == "📚 AI Study Planner":
                     "Session Length (min)": item["Session Length (minutes)"],
                     "Session Type": item["Session Type"],
                 })
-            if weekly_rows:
-                st.dataframe(weekly_rows, use_container_width=True, hide_index=True)
-                st.download_button(
-                    "⬇️ Download timetable (CSV)",
-                    data=__import__("pandas").DataFrame(weekly_rows).to_csv(index=False).encode("utf-8"),
-                    file_name="weekly_study_timetable.csv",
-                    mime="text/csv",
-                    use_container_width=True,
-                )
+            weekly_rows = []
+
+for item in results["weekly"]:
+    study_hours = item["Recommended Hours"]
+
+    weekly_rows.append({
+        "Day": item["Day"],
+        "Date": item["Date"],
+        "Subject": item["Subject"],
+        "Study Hours": study_hours,
+        "Session Length (min)": round(study_hours * 60),
+        "Session Type": (
+            "Revision"
+            if item["Subject"] == "Revision"
+            else "Study"
+        ),
+        "Remaining Topics": item["Remaining Topics"],
+        "Progress (%)": item["Progress (%)"]
+    })
+
+if weekly_rows:
+    st.dataframe(
+        weekly_rows,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.download_button(
+        "⬇️ Download timetable (CSV)",
+        data=__import__("pandas").DataFrame(
+            weekly_rows
+        ).to_csv(index=False).encode("utf-8"),
+        file_name="weekly_study_timetable.csv",
+        mime="text/csv",
+        use_container_width=True,
+    )
+else:
+    st.info("Enter a positive daily study time to create a timetable.")
             else:
                 st.info("Enter a positive daily study time to create a timetable.")
 
@@ -1045,6 +1099,96 @@ elif module == "📚 AI Study Planner":
             st.markdown("#### Next Best Actions")
             for index, recommendation in enumerate(results["recommendations"], start=1):
                 st.markdown(f"{index}. {recommendation}")
+                        # ------------------------------------------
+        # SMART STUDY INSIGHTS
+        # ------------------------------------------
+        with insights_tab:
+
+            st.markdown("#### 📊 Smart Study Analysis")
+
+            insights = results["smart_insights"]
+
+            # Workload overview
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                st.metric(
+                    "Required Daily Hours",
+                    f"{insights['total_daily_hours_required']} hrs"
+                )
+
+            with col2:
+                st.metric(
+                    "Available Daily Hours",
+                    f"{insights['daily_hours_available']} hrs"
+                )
+
+            with col3:
+                st.metric(
+                    "Workload Status",
+                    insights["workload_status"]
+                )
+
+            if insights["workload_status"] == "Manageable":
+                st.success(
+                    "Your estimated daily workload fits within your available study hours."
+                )
+            else:
+                st.warning(
+                    "Your estimated workload exceeds your available daily study hours. "
+                    "Consider adjusting your schedule."
+                )
+
+            st.divider()
+
+            st.markdown("#### 📅 Subject-wise Deadline Analysis")
+
+            st.dataframe(
+                insights["subjects"],
+                use_container_width=True,
+                hide_index=True
+            )
+
+            st.divider()
+
+            st.markdown("#### 🎯 Subject Completion Forecast")
+
+            for subject in insights["subjects"]:
+
+                with st.container(border=True):
+
+                    st.markdown(
+                        f"**{subject['Subject']}**"
+                    )
+
+                    st.progress(
+                        subject["Progress (%)"] / 100,
+                        text=f"Progress: {subject['Progress (%)']}%"
+                    )
+
+                    forecast_col1, forecast_col2 = st.columns(2)
+
+                    with forecast_col1:
+                        st.write(
+                            f"Remaining hours: **{subject['Remaining Hours']} hrs**"
+                        )
+
+                    with forecast_col2:
+                        st.write(
+                            f"Required daily hours: **{subject['Required Hours/Day']} hrs**"
+                        )
+
+                    if subject["Status"] == "Completed":
+                        st.success("Subject completed!")
+
+                    elif subject["Status"] == "Critical":
+                        st.error("Critical: Immediate attention required.")
+
+                    elif subject["Status"] == "Needs Attention":
+                        st.warning("Needs attention: Increase available study time.")
+
+                    else:
+                        st.success("On track!")
 
         if st.button("🧹 Clear generated schedule", key="clear_study_schedule"):
             st.session_state.pop("study_plan_results", None)
