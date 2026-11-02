@@ -1,4 +1,4 @@
-```python
+
 """Offline utilities for PDF Q&A, career roadmaps and interview practice."""
 
 import re
@@ -50,7 +50,9 @@ CAREER_ROADMAPS = {
     ],
 
     "General Software Developer": [
-        "Learn programming fundamentals, OOP and debugging.",
-        "Practise arrays, strings, hashing, searching and sorting.",
-        "Study stacks, queues, linked lists, recursion and
-```
+    "Learn programming fundamentals, OOP and debugging.",
+    "Practise arrays, strings, hashing, searching and sorting.",
+    "Study stacks, queues, linked lists, recursion and trees.",
+    "Learn DBMS, SQL, operating systems and computer networks.",
+    "Build portfolio projects and practise technical interviews."
+]
