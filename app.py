@@ -919,7 +919,7 @@ elif module == "📚 AI Study Planner":
     if results:
         st.divider()
         st.subheader("📊 Your Study Overview")
-               total_subjects = len(results["subjects"])
+        total_subjects = len(results["subjects"])
 
         total_topics = sum(
             subject["total_topics"] for subject in results["subjects"]
