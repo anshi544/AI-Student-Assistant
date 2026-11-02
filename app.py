@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 from datetime import date
@@ -373,7 +372,6 @@ if "auth_access_token" not in st.session_state:
 if "auth_refresh_token" not in st.session_state:
     st.session_state.auth_refresh_token = None
 
-# Interview history is session-only.
 if "interview_attempts" not in st.session_state:
     st.session_state.interview_attempts = []
 
@@ -402,6 +400,106 @@ def restore_supabase_session():
             st.session_state.auth_refresh_token = None
 
     return False
+
+
+# ==================================================
+# SUPABASE INTERVIEW HISTORY
+# ==================================================
+
+def load_interview_history(user_id):
+    """Load the logged-in user's interview attempts from Supabase."""
+
+    try:
+        response = (
+            supabase.table("interview_attempts")
+            .select("*")
+            .eq("user_id", user_id)
+            .order("created_at", desc=False)
+            .execute()
+        )
+
+        attempts = []
+
+        for row in response.data or []:
+            answer = row.get("answer") or ""
+
+            attempts.append({
+                "id": row.get("id"),
+                "question": row.get("question", ""),
+                "answer": answer,
+                "score": int(row.get("score", 0)),
+                "word_count": len(answer.split()),
+                "matched": row.get("matched_keywords") or [],
+                "missing": row.get("missing_keywords") or [],
+                "strengths": row.get("strengths") or [],
+                "improvements": row.get("improvements") or [],
+                "created_at": row.get("created_at")
+            })
+
+        return attempts
+
+    except Exception as exc:
+        st.error("Could not load interview history from Supabase.")
+
+        with st.expander("Technical details"):
+            st.code(str(exc))
+
+        return None
+
+
+def save_interview_attempt(user_id, question, answer, evaluation):
+    """Save an evaluated interview answer to Supabase."""
+
+    try:
+        response = (
+            supabase.table("interview_attempts")
+            .insert({
+                "user_id": user_id,
+                "question": question,
+                "answer": answer,
+                "score": int(evaluation["score"]),
+                "matched_keywords": evaluation["matched_keywords"],
+                "missing_keywords": evaluation["missing_keywords"],
+                "strengths": evaluation["strengths"],
+                "improvements": evaluation["improvements"]
+            })
+            .execute()
+        )
+
+        if response.data:
+            return response.data[0]
+
+        return None
+
+    except Exception as exc:
+        st.error("Your interview result could not be saved.")
+
+        with st.expander("Technical details"):
+            st.code(str(exc))
+
+        return None
+
+
+def delete_interview_history(user_id):
+    """Delete only the logged-in user's interview attempts."""
+
+    try:
+        (
+            supabase.table("interview_attempts")
+            .delete()
+            .eq("user_id", user_id)
+            .execute()
+        )
+
+        return True
+
+    except Exception as exc:
+        st.error("Could not delete interview history.")
+
+        with st.expander("Technical details"):
+            st.code(str(exc))
+
+        return False
 
 
 # ==================================================
@@ -933,11 +1031,34 @@ if st.session_state.auth_user is None:
     show_auth_page()
     st.stop()
 
-restore_supabase_session()
+if not restore_supabase_session():
+
+    st.session_state.auth_user = None
+    st.session_state.auth_access_token = None
+    st.session_state.auth_refresh_token = None
+    st.session_state.interview_attempts = []
+    st.session_state.pop("interview_history_user", None)
+    st.session_state.pop("latest_interview_evaluation", None)
+
+    st.rerun()
 
 user = st.session_state.auth_user
 user_id = user.id
 user_email = getattr(user, "email", "") or ""
+
+
+# ==================================================
+# LOAD INTERVIEW HISTORY FOR CURRENT USER
+# ==================================================
+
+if st.session_state.get("interview_history_user") != user_id:
+
+    loaded_attempts = load_interview_history(user_id)
+
+    if loaded_attempts is not None:
+
+        st.session_state.interview_attempts = loaded_attempts
+        st.session_state.interview_history_user = user_id
 
 
 # ==================================================
@@ -1029,6 +1150,18 @@ with st.sidebar:
             "auth_refresh_token"
         ]:
             st.session_state[key] = None
+
+        st.session_state.interview_attempts = []
+
+        st.session_state.pop(
+            "interview_history_user",
+            None
+        )
+
+        st.session_state.pop(
+            "latest_interview_evaluation",
+            None
+        )
 
         st.rerun()
 
@@ -2228,30 +2361,57 @@ elif module == "💼 Career & Interview Coach":
 
             else:
 
-                evaluation = evaluate_interview_answer(
-                    mock_question,
-                    mock_answer
-                )
+                with st.spinner("Evaluating and saving your answer..."):
 
-                attempt = {
-                    "question": mock_question,
-                    "score": evaluation["score"],
-                    "word_count": evaluation["word_count"],
-                    "matched": evaluation["matched_keywords"],
-                    "missing": evaluation["missing_keywords"]
-                }
+                    evaluation = evaluate_interview_answer(
+                        mock_question,
+                        mock_answer
+                    )
 
-                st.session_state.interview_attempts.append(
-                    attempt
-                )
+                    saved_attempt = save_interview_attempt(
+                        user_id,
+                        mock_question,
+                        mock_answer,
+                        evaluation
+                    )
 
-                st.session_state.latest_interview_evaluation = {
-                    "question": mock_question,
-                    "answer": mock_answer,
-                    "evaluation": evaluation
-                }
+                if saved_attempt:
 
-                st.rerun()
+                    attempt = {
+                        "id": saved_attempt.get("id"),
+                        "question": mock_question,
+                        "answer": mock_answer,
+                        "score": evaluation["score"],
+                        "word_count": evaluation["word_count"],
+                        "matched": evaluation["matched_keywords"],
+                        "missing": evaluation["missing_keywords"],
+                        "strengths": evaluation["strengths"],
+                        "improvements": evaluation["improvements"],
+                        "created_at": saved_attempt.get("created_at")
+                    }
+
+                    st.session_state.interview_attempts.append(
+                        attempt
+                    )
+
+                    st.session_state.latest_interview_evaluation = {
+                        "question": mock_question,
+                        "answer": mock_answer,
+                        "evaluation": evaluation
+                    }
+
+                    st.success(
+                        "Your interview result has been saved successfully!"
+                    )
+
+                    st.rerun()
+
+                else:
+
+                    st.error(
+                        "The evaluation could not be saved. "
+                        "Your attempt has not been added to the history."
+                    )
 
         # ------------------------------------------
         # EVALUATION RESULTS
@@ -2371,14 +2531,24 @@ elif module == "💼 Career & Interview Coach":
             for improvement in evaluation["improvements"]:
                 st.markdown(f"- {improvement}")
 
-            # Reference answer
+            # Reference answer for the evaluated question
+
+            latest_reference_answer = next(
+                (
+                    answer
+                    for bank in INTERVIEW_BANK.values()
+                    for question, answer in bank
+                    if question == latest["question"]
+                ),
+                "No reference answer is available."
+            )
 
             with st.expander("📖 Compare with Reference Answer"):
 
                 st.write(latest["question"])
 
                 st.markdown(
-                    f"**Reference explanation:** {reference_answer}"
+                    f"**Reference explanation:** {latest_reference_answer}"
                 )
 
                 st.caption(
@@ -2487,14 +2657,20 @@ elif module == "💼 Career & Interview Coach":
                 key="clear_interview_history"
             ):
 
-                st.session_state.interview_attempts = []
+                if delete_interview_history(user_id):
 
-                st.session_state.pop(
-                    "latest_interview_evaluation",
-                    None
-                )
+                    st.session_state.interview_attempts = []
 
-                st.rerun()
+                    st.session_state.pop(
+                        "latest_interview_evaluation",
+                        None
+                    )
+
+                    st.success(
+                        "Your interview history has been deleted."
+                    )
+
+                    st.rerun()
 
         else:
 
@@ -2504,8 +2680,9 @@ elif module == "💼 Career & Interview Coach":
             )
 
         st.caption(
-            "Your interview history is stored in the current Streamlit "
-            "session only. It is not permanently saved to Supabase."
+            "Your interview attempts are saved securely in Supabase "
+            "and linked to your account. You can access your history "
+            "again after logging in."
         )
 
 
@@ -2677,4 +2854,3 @@ elif module == "🤖 Student Chatbot":
             pass
 
         st.rerun()
-
