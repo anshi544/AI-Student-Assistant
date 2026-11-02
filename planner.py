@@ -382,3 +382,86 @@ def get_study_recommendations(subjects):
     )
 
     return recommendations
+    def generate_smart_insights(subjects, daily_hours):
+"""Generate deadline alerts, workload analysis and completion forecasts."""
+from datetime import date
+
+```
+insights = []
+total_required_daily_hours = 0
+
+for subject in subjects:
+    total_topics = subject["total_topics"]
+    remaining_topics = subject["remaining_topics"]
+    estimated_hours = subject["estimated_hours"]
+    deadline = subject["deadline"]
+
+    if total_topics > 0:
+        remaining_hours = (
+            estimated_hours * remaining_topics / total_topics
+        )
+    else:
+        remaining_hours = 0
+
+    days_left = (deadline - date.today()).days
+
+    if days_left > 0:
+        required_daily_hours = remaining_hours / days_left
+    else:
+        required_daily_hours = remaining_hours
+
+    total_required_daily_hours += required_daily_hours
+
+    progress = (
+        (subject["completed_topics"] / total_topics) * 100
+        if total_topics > 0 else 0
+    )
+
+    # Deadline alert
+    if remaining_topics == 0:
+        deadline_alert = "Completed"
+    elif days_left < 0:
+        deadline_alert = "Overdue"
+    elif days_left <= 3:
+        deadline_alert = "Urgent"
+    elif days_left <= 7:
+        deadline_alert = "Approaching"
+    else:
+        deadline_alert = "On Schedule"
+
+    # Progress status
+    if remaining_topics == 0:
+        status = "Completed"
+    elif days_left < 0 or (
+        days_left <= 3 and remaining_topics > 0
+    ):
+        status = "Critical"
+    elif required_daily_hours > daily_hours:
+        status = "Needs Attention"
+    else:
+        status = "On Track"
+
+    insights.append({
+        "Subject": subject["name"],
+        "Deadline Alert": deadline_alert,
+        "Days Left": days_left,
+        "Progress (%)": round(progress, 1),
+        "Remaining Hours": round(remaining_hours, 1),
+        "Required Hours/Day": round(required_daily_hours, 2),
+        "Status": status
+    })
+
+if total_required_daily_hours <= daily_hours:
+    workload_status = "Manageable"
+else:
+    workload_status = "Overloaded"
+
+return {
+    "subjects": insights,
+    "total_daily_hours_required": round(
+        total_required_daily_hours, 2
+    ),
+    "daily_hours_available": daily_hours,
+    "workload_status": workload_status
+}
+```
