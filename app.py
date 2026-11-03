@@ -448,29 +448,36 @@ def load_interview_history(user_id):
 
 
 def save_interview_attempt(user_id, question, answer, evaluation):
-    """Save an evaluated interview answer to Supabase."""
-
     try:
+        payload = {
+            "user_id": str(user_id),
+            "question": question,
+            "answer": answer,
+            "score": int(evaluation["score"]),
+            "matched_keywords": evaluation["matched_keywords"],
+            "missing_keywords": evaluation["missing_keywords"],
+            "strengths": evaluation["strengths"],
+            "improvements": evaluation["improvements"]
+        }
+
         response = (
-            supabase.table("interview_attempts")
-            .insert({
-                "user_id": user_id,
-                "question": question,
-                "answer": answer,
-                "score": int(evaluation["score"]),
-                "matched_keywords": evaluation["matched_keywords"],
-                "missing_keywords": evaluation["missing_keywords"],
-                "strengths": evaluation["strengths"],
-                "improvements": evaluation["improvements"]
-            })
+            supabase
+            .table("interview_attempts")
+            .insert(payload)
+            .select("*")
             .execute()
         )
 
-        if response.data:
+        if response.data and len(response.data) > 0:
             return response.data[0]
 
+        st.error("Supabase did not return the inserted interview record.")
         return None
 
+    except Exception as exc:
+        st.error("Your interview result could not be saved.")
+        st.exception(exc)
+        return None
     except Exception as exc:
         st.error("Your interview result could not be saved.")
 
