@@ -3075,7 +3075,7 @@ def load_study_logs(user_id):
 # STUDENT CHATBOT
 # ==================================================
 
-elif module == "🤖 Student Chatbot":
+if module == "🤖 Student Chatbot":
 
     st.markdown(
         '<div class="app-eyebrow">YOUR STUDY & CAREER COMPANION</div>',
