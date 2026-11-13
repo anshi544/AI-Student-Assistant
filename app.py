@@ -2047,6 +2047,38 @@ elif module == "📚 AI Study Planner":
 
     if results:
         subjects = results["subjects"]
+                # Load saved study history from Supabase
+        user_id = str(st.session_state.auth_user.id)
+
+        if st.session_state.get("study_history_loaded_user") != user_id:
+            st.session_state.study_log = {}
+
+            saved_logs = load_study_logs(user_id)
+
+            for record in saved_logs:
+                day_key = record["study_date"]
+                subject_name = record["subject_name"]
+                hours = float(record["actual_hours"])
+
+                subject_index = next(
+                    (
+                        i for i, subject in enumerate(subjects)
+                        if subject["name"] == subject_name
+                    ),
+                    None
+                )
+
+                if subject_index is not None:
+                    st.session_state.study_log.setdefault(day_key, {})
+                    subject_key = str(subject_index)
+
+                    st.session_state.study_log[day_key][subject_key] = (
+                        st.session_state.study_log[day_key].get(
+                            subject_key, 0.0
+                        ) + hours
+                    )
+
+            st.session_state.study_history_loaded_user = user_id
 
         selected_date = st.date_input(
             "Select study date",
@@ -2070,22 +2102,31 @@ elif module == "📚 AI Study Planner":
             key="daily_actual_hours"
         )
 
-        if st.button("➕ Record Study Hours"):
+                if st.button("➕ Record Study Hours"):
             day_key = selected_date.isoformat()
             subject_key = str(selected_index)
+            subject_name = subjects[selected_index]["name"]
 
-            st.session_state.study_log.setdefault(day_key, {})
-
-            previous_hours = st.session_state.study_log[
-                day_key
-            ].get(subject_key, 0.0)
-
-            st.session_state.study_log[day_key][subject_key] = (
-                previous_hours + float(actual_hours)
+            saved = save_study_log(
+                st.session_state.auth_user.id,
+                selected_date,
+                subject_name,
+                actual_hours
             )
 
-            st.success("Study hours recorded successfully!")
-            st.rerun()
+            if saved:
+                st.session_state.study_log.setdefault(day_key, {})
+
+                previous_hours = st.session_state.study_log[
+                    day_key
+                ].get(subject_key, 0.0)
+
+                st.session_state.study_log[day_key][subject_key] = (
+                    previous_hours + float(actual_hours)
+                )
+
+                st.success("Study hours saved permanently!")
+                st.rerun()
 
         day_key = selected_date.isoformat()
         daily_entries = st.session_state.study_log.get(day_key, {})
@@ -2982,6 +3023,53 @@ elif module == "💼 Career & Interview Coach":
             "and linked to your account. You can access your history "
             "again after logging in."
         )
+# ==================================================
+# SUPABASE STUDY HISTORY
+# ==================================================
+
+def save_study_log(user_id, study_date, subject_name, actual_hours):
+    """Save a student's daily study record to Supabase."""
+
+    try:
+        payload = {
+            "user_id": str(user_id),
+            "study_date": study_date.isoformat(),
+            "subject_name": subject_name,
+            "actual_hours": float(actual_hours)
+        }
+
+        response = (
+            supabase.table("study_logs")
+            .insert(payload)
+            .execute()
+        )
+
+        return True
+
+    except Exception as exc:
+        st.error("Could not save study hours to Supabase.")
+        st.exception(exc)
+        return False
+
+
+def load_study_logs(user_id):
+    """Retrieve the logged-in student's study history."""
+
+    try:
+        response = (
+            supabase.table("study_logs")
+            .select("*")
+            .eq("user_id", str(user_id))
+            .order("study_date", desc=False)
+            .execute()
+        )
+
+        return response.data or []
+
+    except Exception as exc:
+        st.error("Could not load study history from Supabase.")
+        st.exception(exc)
+        return []
 
 
 # ==================================================
