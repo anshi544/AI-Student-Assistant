@@ -2101,8 +2101,7 @@ elif module == "📚 AI Study Planner":
             step=0.25,
             key="daily_actual_hours"
         )
-
-            if st.button("➕ Record Study Hours"):
+        if st.button("➕ Record Study Hours"):
             day_key = selected_date.isoformat()
             subject_key = str(selected_index)
             subject_name = subjects[selected_index]["name"]
