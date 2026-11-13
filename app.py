@@ -1372,6 +1372,50 @@ if module == "🏠 Dashboard":
 # MY PROFILE
 # ==================================================
 
+def save_study_log(user_id, study_date, subject_name, actual_hours):
+    """Save a student's daily study record to Supabase."""
+
+    try:
+        payload = {
+            "user_id": str(user_id),
+            "study_date": study_date.isoformat(),
+            "subject_name": subject_name,
+            "actual_hours": float(actual_hours)
+        }
+
+        response = (
+            supabase.table("study_logs")
+            .insert(payload)
+            .execute()
+        )
+
+        return True
+
+    except Exception as exc:
+        st.error("Could not save study hours to Supabase.")
+        st.exception(exc)
+        return False
+
+
+def load_study_logs(user_id):
+    """Retrieve the logged-in student's study history."""
+
+    try:
+        response = (
+            supabase.table("study_logs")
+            .select("*")
+            .eq("user_id", str(user_id))
+            .order("study_date", desc=False)
+            .execute()
+        )
+
+        return response.data or []
+
+    except Exception as exc:
+        st.error("Could not load study history from Supabase.")
+        st.exception(exc)
+        return []
+
 elif module == "👤 My Profile":
 
     st.markdown(
@@ -3026,49 +3070,6 @@ elif module == "💼 Career & Interview Coach":
 # SUPABASE STUDY HISTORY
 # ==================================================
 
-def save_study_log(user_id, study_date, subject_name, actual_hours):
-    """Save a student's daily study record to Supabase."""
-
-    try:
-        payload = {
-            "user_id": str(user_id),
-            "study_date": study_date.isoformat(),
-            "subject_name": subject_name,
-            "actual_hours": float(actual_hours)
-        }
-
-        response = (
-            supabase.table("study_logs")
-            .insert(payload)
-            .execute()
-        )
-
-        return True
-
-    except Exception as exc:
-        st.error("Could not save study hours to Supabase.")
-        st.exception(exc)
-        return False
-
-
-def load_study_logs(user_id):
-    """Retrieve the logged-in student's study history."""
-
-    try:
-        response = (
-            supabase.table("study_logs")
-            .select("*")
-            .eq("user_id", str(user_id))
-            .order("study_date", desc=False)
-            .execute()
-        )
-
-        return response.data or []
-
-    except Exception as exc:
-        st.error("Could not load study history from Supabase.")
-        st.exception(exc)
-        return []
 
 
 # ==================================================
