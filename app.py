@@ -1984,6 +1984,251 @@ elif module == "📚 AI Study Planner":
             st.rerun()
 
 
+    # =====================================================
+    # SUBJECT PROGRESS TRACKER
+    # =====================================================
+
+    initialize_study_tracker()
+
+    results = st.session_state.get("study_plan_results")
+
+    if results:
+        st.markdown("---")
+        st.subheader("📈 Subject Progress Tracker")
+        st.write("Update completed topics to adapt your study timetable.")
+
+        for i, subject in enumerate(results["subjects"]):
+            with st.container(border=True):
+                st.markdown(f"**{subject['name']}**")
+
+                total = int(subject["total_topics"])
+                completed = int(subject["completed_topics"])
+
+                progress = completed / total if total > 0 else 0
+
+                st.progress(progress)
+                st.caption(
+                    f"Progress: {completed}/{total} topics completed "
+                    f"({progress * 100:.1f}%)"
+                )
+
+                with st.form(key=f"progress_form_{i}"):
+                    updated = st.number_input(
+                        "Update completed topics",
+                        min_value=0,
+                        max_value=max(total, 0),
+                        value=completed,
+                        step=1,
+                        key=f"progress_update_{i}"
+                    )
+
+                    submitted = st.form_submit_button(
+                        "Update Progress"
+                    )
+
+                    if submitted:
+                        subject["completed_topics"] = int(updated)
+                        subject["remaining_topics"] = max(
+                            0, total - int(updated)
+                        )
+
+                        rebuild_study_plan(results)
+
+                        st.success(
+                            f"Progress updated for {subject['name']}!"
+                        )
+                        st.rerun()
+    # =====================================================
+    # DAILY STUDY-HOURS TRACKER
+    # =====================================================
+
+    st.markdown("---")
+    st.subheader("⏱️ Daily Study-Hours Tracker")
+
+    if results:
+        subjects = results["subjects"]
+
+        selected_date = st.date_input(
+            "Select study date",
+            value=date.today(),
+            key="daily_log_date"
+        )
+
+        selected_index = st.selectbox(
+            "Select subject",
+            options=list(range(len(subjects))),
+            format_func=lambda i: subjects[i]["name"],
+            key="daily_log_subject"
+        )
+
+        actual_hours = st.number_input(
+            "Actual study hours",
+            min_value=0.25,
+            max_value=16.0,
+            value=1.0,
+            step=0.25,
+            key="daily_actual_hours"
+        )
+
+        if st.button("➕ Record Study Hours"):
+            day_key = selected_date.isoformat()
+            subject_key = str(selected_index)
+
+            st.session_state.study_log.setdefault(day_key, {})
+
+            previous_hours = st.session_state.study_log[
+                day_key
+            ].get(subject_key, 0.0)
+
+            st.session_state.study_log[day_key][subject_key] = (
+                previous_hours + float(actual_hours)
+            )
+
+            st.success("Study hours recorded successfully!")
+            st.rerun()
+
+        day_key = selected_date.isoformat()
+        daily_entries = st.session_state.study_log.get(day_key, {})
+
+        if daily_entries:
+            st.markdown("#### Recorded hours")
+
+            daily_total = 0.0
+
+            for subject_key, hours in daily_entries.items():
+                subject_index = int(subject_key)
+                subject_name = subjects[subject_index]["name"]
+
+                st.write(f"📚 {subject_name}: **{hours:.2f} hours**")
+                daily_total += hours
+
+            st.metric("Total study hours", f"{daily_total:.2f} hours")
+        else:
+            st.info("No study hours recorded for this date.")
+    # =====================================================
+    # WEEKLY STUDY ANALYTICS
+    # =====================================================
+
+    st.markdown("---")
+    st.subheader("📊 Weekly Study Analytics")
+
+    if results:
+        weekly_data = results.get("weekly")
+
+        if isinstance(weekly_data, pd.DataFrame):
+            weekly_df = weekly_data.copy()
+        else:
+            weekly_df = pd.DataFrame(weekly_data or [])
+
+        planned_by_date = {}
+
+        if not weekly_df.empty:
+            for _, row in weekly_df.iterrows():
+                raw_date = row.get("Date")
+
+                if pd.notna(raw_date):
+                    date_key = pd.to_datetime(raw_date).date().isoformat()
+                    planned_by_date[date_key] = (
+                        planned_by_date.get(date_key, 0.0)
+                        + float(row.get("Recommended Hours", 0) or 0)
+                    )
+
+        actual_by_date = {
+            day: sum(entries.values())
+            for day, entries in st.session_state.study_log.items()
+        }
+
+        all_dates = sorted(set(planned_by_date) | set(actual_by_date))
+
+        if all_dates:
+            analytics_df = pd.DataFrame([
+                {
+                    "Date": day,
+                    "Planned Hours": planned_by_date.get(day, 0.0),
+                    "Actual Hours": actual_by_date.get(day, 0.0)
+                }
+                for day in all_dates
+            ])
+
+            analytics_df["Date"] = pd.to_datetime(analytics_df["Date"])
+
+            st.dataframe(
+                analytics_df,
+                use_container_width=True,
+                hide_index=True
+            )
+
+            st.line_chart(
+                analytics_df.set_index("Date")[
+                    ["Planned Hours", "Actual Hours"]
+                ]
+            )
+
+            col1, col2 = st.columns(2)
+
+            col1.metric(
+                "Total Planned Hours",
+                f"{analytics_df['Planned Hours'].sum():.2f}"
+            )
+
+            col2.metric(
+                "Total Actual Hours",
+                f"{analytics_df['Actual Hours'].sum():.2f}"
+            )
+        else:
+            st.info("Generate a timetable and record study hours to see analytics.")
+    # =====================================================
+    # DEADLINE ALERTS
+    # =====================================================
+
+    st.markdown("---")
+    st.subheader("🚨 Subject Deadline Alerts")
+
+    if results:
+        today = date.today()
+
+        for subject in results["subjects"]:
+            deadline = subject["deadline"]
+            remaining = int(subject["remaining_topics"])
+            days_left = (deadline - today).days
+
+            if remaining == 0:
+                st.success(f"✅ {subject['name']}: All topics completed!")
+            elif days_left < 0:
+                st.error(
+                    f"🔴 {subject['name']}: Deadline overdue by "
+                    f"{abs(days_left)} days. {remaining} topics remaining."
+                )
+            elif days_left == 0:
+                st.error(
+                    f"⚠️ {subject['name']}: Deadline is TODAY! "
+                    f"{remaining} topics remaining."
+                )
+            elif days_left <= 3:
+                st.warning(
+                    f"🚨 {subject['name']}: Only {days_left} days left! "
+                    f"{remaining} topics remaining."
+                )
+            elif days_left <= 7:
+                st.warning(
+                    f"🟡 {subject['name']}: Deadline in {days_left} days."
+                )
+            else:
+                st.info(
+                    f"📅 {subject['name']}: {days_left} days remaining."
+                )
+    # =====================================================
+    # ADAPTIVE TIMETABLE
+    # =====================================================
+
+    st.markdown("---")
+    st.subheader("🔄 Adaptive Timetable")
+
+    if results:
+        if st.button("Recalculate Timetable Using Latest Progress"):
+            rebuild_study_plan(results)
+            st.success("Your timetable has been updated!")
+            st.rerun()
 # ==================================================
 # AI RESUME ANALYZER
 # ==================================================
