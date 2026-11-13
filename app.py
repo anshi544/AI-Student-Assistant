@@ -3,6 +3,52 @@ import pandas as pd
 from datetime import date, timedelta
 from html import escape
 from supabase import create_client, Client
+# =========================================================
+# STUDY PLANNER ENHANCEMENT HELPERS
+# =========================================================
+
+def rebuild_study_plan(results):
+    """Regenerate the study plan using the latest subject progress."""
+
+    subjects = results["subjects"]
+    daily_hours = float(results["daily_hours"])
+    days = int(results["days"])
+
+    for subject in subjects:
+        subject["remaining_topics"] = max(
+            0,
+            int(subject["total_topics"]) -
+            int(subject["completed_topics"])
+        )
+
+    results["plan"] = generate_plan(subjects, daily_hours)
+
+    results["weekly"] = generate_weekly_plan(
+        subjects,
+        daily_hours,
+        days=days
+    )
+
+    results["recommendations"] = get_study_recommendations(subjects)
+
+    results["smart_insights"] = generate_smart_insights(
+        subjects,
+        daily_hours
+    )
+
+    st.session_state.study_plan_results = results
+
+    return results
+
+
+def initialize_study_tracker():
+    """Initialize session-based study tracking."""
+
+    if "study_log" not in st.session_state:
+        st.session_state.study_log = {}
+
+    if "study_plan_results" not in st.session_state:
+        st.session_state.study_plan_results = None
 
 from planner import (
     generate_plan,
