@@ -1289,112 +1289,134 @@ elif module == "📚 AI Study Planner":
         "Create, manage and adapt your personalized study schedule."
     )
 
-    with st.expander("➕ Create a New Study Plan", expanded=True):
+    
+with st.expander("➕ Create a New Study Plan", expanded=True):
 
-        with st.form("study_plan_form"):
+    # Keep subject count OUTSIDE the form
+    subject_count = st.number_input(
+        "Number of subjects",
+        min_value=1,
+        max_value=10,
+        value=3,
+        step=1,
+        key="study_subject_count"
+    )
+
+    with st.form("study_plan_form"):
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            daily_hours = st.number_input(
+                "Daily available study hours",
+                min_value=0.5,
+                max_value=16.0,
+                value=4.0,
+                step=0.5
+            )
+
+        with col2:
+            schedule_days = st.selectbox(
+                "Schedule duration",
+                [3, 5, 7],
+                index=2
+            )
+
+        valid_subjects = []
+
+        for i in range(int(subject_count)):
+
+            st.markdown(f"#### Subject {i + 1}")
 
             col1, col2 = st.columns(2)
 
             with col1:
 
-                daily_hours = st.number_input(
-                    "Daily available study hours",
-                    min_value=0.5,
-                    max_value=16.0,
-                    value=4.0,
-                    step=0.5
+                subject_name = st.text_input(
+                    "Subject name",
+                    key=f"subject_name_{i}"
+                )
+
+                difficulty = st.selectbox(
+                    "Difficulty",
+                    ["Easy", "Medium", "Hard"],
+                    key=f"difficulty_{i}"
+                )
+
+                deadline = st.date_input(
+                    "Exam / completion deadline",
+                    value=date.today() + timedelta(days=14),
+                    min_value=date.today(),
+                    key=f"deadline_{i}"
                 )
 
             with col2:
 
-                schedule_days = st.selectbox(
-                    "Schedule duration",
-                    [3, 5, 7],
-                    index=2
+                total_topics = st.number_input(
+                    "Total topics",
+                    min_value=1,
+                    max_value=200,
+                    value=10,
+                    key=f"total_topics_{i}"
                 )
 
-            subject_count = st.number_input(
-                "Number of subjects",
-                min_value=1,
-                max_value=10,
-                value=3
-            )
+                completed_topics = st.number_input(
+                    "Completed topics",
+                    min_value=0,
+                    max_value=200,
+                    value=0,
+                    key=f"completed_topics_{i}"
+                )
 
-            valid_subjects = []
+                estimated_hours = st.number_input(
+                    "Estimated total study hours",
+                    min_value=1.0,
+                    max_value=500.0,
+                    value=10.0,
+                    key=f"estimated_hours_{i}"
+                )
 
-            for i in range(int(subject_count)):
+            if subject_name.strip():
 
-                st.markdown(f"#### Subject {i + 1}")
+                valid_subjects.append({
+                    "name": subject_name.strip(),
+                    "difficulty": difficulty,
+                    "deadline": deadline,
+                    "total_topics": int(total_topics),
+                    "completed_topics": int(completed_topics),
+                    "remaining_topics": max(
+                        0,
+                        int(total_topics) - int(completed_topics)
+                    ),
+                    "estimated_hours": float(estimated_hours)
+                })
 
-                col1, col2 = st.columns(2)
+        submitted = st.form_submit_button(
+            "🚀 Generate Study Plan",
+            use_container_width=True
+        )
 
-                with col1:
+        if submitted:
 
-                    subject_name = st.text_input(
-                        "Subject name",
-                        key=f"subject_name_{i}"
-                    )
+            if not valid_subjects:
 
-                    difficulty = st.selectbox(
-                        "Difficulty",
-                        ["Easy", "Medium", "Hard"],
-                        key=f"difficulty_{i}"
-                    )
+                st.error("Enter at least one subject.")
 
-                    deadline = st.date_input(
-                        "Exam / completion deadline",
-                        value=date.today() + timedelta(days=14),
-                        min_value=date.today(),
-                        key=f"deadline_{i}"
-                    )
+            else:
 
-                with col2:
+                results = {
+                    "subjects": valid_subjects,
+                    "daily_hours": float(daily_hours),
+                    "days": int(schedule_days)
+                }
 
-                    total_topics = st.number_input(
-                        "Total topics",
-                        min_value=1,
-                        max_value=200,
-                        value=10,
-                        key=f"total_topics_{i}"
-                    )
+                results = rebuild_study_plan(results)
 
-                    completed_topics = st.number_input(
-                        "Completed topics",
-                        min_value=0,
-                        max_value=200,
-                        value=0,
-                        key=f"completed_topics_{i}"
-                    )
+                st.session_state.study_plan_results = results
 
-                    estimated_hours = st.number_input(
-                        "Estimated total study hours",
-                        min_value=1.0,
-                        max_value=500.0,
-                        value=10.0,
-                        key=f"estimated_hours_{i}"
-                    )
+                st.success("Your study plan has been generated!")
+                st.rerun()
 
-                if subject_name.strip():
-
-                    valid_subjects.append({
-                        "name": subject_name.strip(),
-                        "difficulty": difficulty,
-                        "deadline": deadline,
-                        "total_topics": int(total_topics),
-                        "completed_topics": int(completed_topics),
-                        "remaining_topics": max(
-                            0,
-                            int(total_topics) - int(completed_topics)
-                        ),
-                        "estimated_hours": float(estimated_hours)
-                    })
-
-            submitted = st.form_submit_button(
-                "🚀 Generate Study Plan",
-                use_container_width=True
-            )
-
-            if submitted:
 
                 if not valid_subjects:
 
