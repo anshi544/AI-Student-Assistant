@@ -1418,23 +1418,7 @@ with st.expander("➕ Create a New Study Plan", expanded=True):
                 st.rerun()
 
 
-                if not valid_subjects:
-
-                    st.error("Enter at least one subject.")
-
-                else:
-
-                    results = {
-                        "subjects": valid_subjects,
-                        "daily_hours": float(daily_hours),
-                        "days": int(schedule_days)
-                    }
-
-                    results = rebuild_study_plan(results)
-
-                    st.success("Your study plan has been generated!")
-                    st.rerun()
-
+                
 
     results = st.session_state.study_plan_results
 
