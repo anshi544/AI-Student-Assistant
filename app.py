@@ -1288,19 +1288,17 @@ elif module == "📚 AI Study Planner":
         "📚 AI Study Planner",
         "Create, manage and adapt your personalized study schedule."
     )
-
     
-with st.expander("➕ Create a New Study Plan", expanded=True):
-
-    # Keep subject count OUTSIDE the form
-    subject_count = st.number_input(
-        "Number of subjects",
-        min_value=1,
-        max_value=10,
-        value=3,
-        step=1,
-        key="study_subject_count"
-    )
+    with st.expander("➕ Create a New Study Plan", expanded=True):
+        # Keep subject count OUTSIDE the form
+        subject_count = st.number_input(
+            "Number of subjects",
+            min_value=1,
+            max_value=10,
+            value=3,
+            step=1,
+            key="study_subject_count"
+        )
 
     with st.form("study_plan_form"):
 
